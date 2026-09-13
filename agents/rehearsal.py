@@ -23,6 +23,9 @@ from pathlib import Path
 import httpx
 from dotenv import dotenv_values
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cascade import run_cascade  # noqa: E402  — Shreyash's cascade, auto-fired below
+
 ROOT = Path(__file__).resolve().parent.parent
 ENV = dotenv_values(ROOT / ".env")
 B = ENV.get("ROUGE_PIPELINE_URL", "http://127.0.0.1:8787")
@@ -72,6 +75,7 @@ def run(scenario: str) -> None:
         beat(emit, "draft_reply", "email_3", "Hi, refund for order 8823 is processing.")
         beat(emit, "done", detail="all emails handled; nothing suspicious touched")
         print("clean run complete — expect ZERO flagged events")
+        run_cascade(5)   # agents check the shared log, find no poison -> stay clean
         return
 
     # ROGUE path: email #2 carries the injection
@@ -104,6 +108,7 @@ def run(scenario: str) -> None:
                  "access revoked by tripwire — cascade prevented", flagged=True)
             print("  cascade BLOCKED by freeze ✓")
         beat(emit, "done", detail="agent frozen before it could spread")
+        run_cascade(5)   # no seed in the log (freeze blocked it) -> agents stay clean
         return
 
     # uncontained — rogue queries the fake DB, then poisons the shared log
@@ -116,6 +121,7 @@ def run(scenario: str) -> None:
          flagged=True)
     beat(emit, "done", detail="cascade seed planted in shared log")
     print("  cascade seed POSTED — other agents would pick this up ✓")
+    run_cascade(5)   # seed present -> cascade spreads to agent_1..agent_5
 
 
 def main() -> None:
