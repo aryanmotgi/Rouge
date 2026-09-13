@@ -2,7 +2,7 @@
   "name": "rouge-wasmer-decoy",
   "private": true,
   "type": "module",
-  "description": "Shreyash's Wasmer problem-side: real decoy + sandbox spin layer",
+  "description": "Shreyash's Wasmer problem-side: real billing decoy",
   "dependencies": {
     "@wasmer/sdk": "^0.13.0"
   }
