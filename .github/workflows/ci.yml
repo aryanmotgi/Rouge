@@ -24,8 +24,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Compile all modules (syntax + import sanity)
-        run: python -m py_compile server/*.py agents/*.py scripts/*.py
+      - name: Import all modules (syntax + real import check)
+        # importing (not just py_compile) actually executes imports, so a broken
+        # import in agents/ or scripts/ fails CI instead of only surfacing at runtime
+        run: |
+          python -c "import sys; sys.path[:0]=['server','agents','scripts']; \
+          import bus, trap, event_pipeline, decoy_stub, emit, llm, agent, email_agent, rehearsal, stage; \
+          print('all imports ok')"
 
       - name: Boot pipeline and hit /health
         run: |
