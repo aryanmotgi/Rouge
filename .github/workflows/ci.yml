@@ -1,0 +1,49 @@
+name: CI
+
+# Runs on every PR + pushes to main. Cheap smoke test: does everything compile
+# and does the pipeline boot + answer /health? Enough to catch import/syntax breaks
+# during a fast-moving hackathon.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    # Free GitHub-hosted runner. To move CI onto Tenki Runners later, install the
+    # Tenki Runners GitHub App and change this one line to Tenki's runner label
+    # (shown in the Tenki dashboard), e.g.  runs-on: [self-hosted, tenki]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Import all modules (syntax + real import check)
+        # importing (not just py_compile) actually executes imports, so a broken
+        # import in agents/ or scripts/ fails CI instead of only surfacing at runtime
+        run: |
+          python -c "import sys; sys.path[:0]=['server','agents','scripts']; \
+          import bus, trap, event_pipeline, decoy_stub, emit, llm, agent, email_agent, rehearsal, stage; \
+          print('all imports ok')"
+
+      - name: Boot pipeline and hit /health
+        run: |
+          # start server, capture PID, and always kill it on step exit
+          uvicorn server.event_pipeline:app --host 127.0.0.1 --port 8787 \
+            > /tmp/uvicorn.log 2>&1 &
+          echo $! > /tmp/uvicorn.pid
+          trap 'kill "$(cat /tmp/uvicorn.pid)" 2>/dev/null' EXIT
+          # poll up to ~30s instead of a fixed sleep (slow runners bind late)
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8787/health; then
+              echo "health OK after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "health check failed; server log:"; cat /tmp/uvicorn.log; exit 1
