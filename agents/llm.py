@@ -61,13 +61,14 @@ def _openai_compat(system: str, messages: list[dict], temperature: float) -> str
 
 
 def _post_with_backoff(url: str, body: dict, headers: dict | None = None,
-                       attempts: int = 6) -> dict:
+                       attempts: int = 8) -> dict:
     """Free-tier RPM limits => retry 429/503 with exponential backoff + jitter."""
     for i in range(attempts):
         _pace()
         r = httpx.post(url, json=body, headers=headers, timeout=60.0)
         if r.status_code in (429, 503) and i < attempts - 1:
-            wait = min(30.0, 2.0 * (2 ** i)) + random.uniform(0, 1.5)
+            # free-tier token window refills every ~minute; wait long enough to clear it
+            wait = min(20.0, 8.0 + 4.0 * i) + random.uniform(0, 2.0)
             time.sleep(wait)
             continue
         r.raise_for_status()
