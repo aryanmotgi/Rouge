@@ -25,17 +25,6 @@ DECOY_PRIMARY_URL=http://127.0.0.1:8791/accounts
 `stage.py` then points the planted bait at it and only falls back to Aryan's
 stub if this is unreachable.
 
-## `spin_sandboxes.mjs` — the Wasmer "wide, cheap, instant" layer
-The honest version of the "~100 agents" beat: sandbox **creation** is real and
-cheap (measured ~1 ms warm after a one-time cache warm; ~10–15 s cold). It does
-**not** run 100 live-reasoning agents (that costs real LLM calls) — it
-demonstrates the isolation layer the decoy and cascade agents run inside.
-
-```bash
-npm install          # once, pulls @wasmer/sdk
-node spin_sandboxes.mjs 100
-```
-
 ## `wasmer_egress_proof.mjs` — capability proof
 Shows a program **inside** a Wasmer sandbox making a real outbound HTTPS call
 (the capability the sandboxed agents depend on). Verified 2026-09-13.
