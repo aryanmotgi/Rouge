@@ -46,13 +46,43 @@
   .row .ic { min-width:14px; }
   .controls { padding:10px 16px; border-top:1px solid var(--line); font-size:12px; color:var(--dim); }
   .controls b { color:var(--txt); }
+  /* view tabs */
+  .vtab { font-size:12px; padding:5px 12px; border-radius:6px; cursor:pointer;
+          border:1px solid var(--line); background:#12151c; color:var(--dim); }
+  .vtab.on { color:#fff; border-color:var(--red); background:#1a0f14; }
+  [hidden] { display:none !important; }
+  /* channel (group chat) view */
+  #view-channel { height:calc(100vh - 45px); }
+  .chat { display:grid; grid-template-columns:1fr 260px; height:100%; }
+  .chan { display:flex; flex-direction:column; min-width:0; }
+  .chan .h { padding:12px 18px; border-bottom:1px solid var(--line); color:var(--dim); }
+  .chan .h b { color:var(--txt); }
+  .msgs { flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:11px; }
+  .cm { display:flex; gap:10px; align-items:flex-start; animation:in .2s ease; }
+  .cm .av { width:28px; height:28px; border-radius:7px; display:grid; place-items:center; font-size:14px;
+            background:#16223a; border:1px solid #2a3c58; flex:none; }
+  .cm .who { color:#9fb4d6; font-size:12px; } .cm.poison .who { color:var(--red); }
+  .cm .bd { font-size:13px; } .cm.poison .bd { color:#ffb3bd; }
+  .cm.sys .bd { color:var(--dim); font-style:italic; }
+  .cm.sys.hot .bd { color:#ff9aa6; font-style:normal; }
+  .cm.sys.frz .bd { color:#7fdcff; font-style:normal; }
+  .croster { border-left:1px solid var(--line); padding:14px; display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
+  .croster .t { color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:1px; }
+  .cr { display:flex; gap:8px; align-items:center; padding:7px 9px; border-radius:8px;
+        border:1px solid #1c2636; font-size:13px; transition:.3s; }
+  .cr .st { margin-left:auto; font-size:10px; color:var(--green); }
+  .cr.bad { border-color:#3a1620; background:#1a0e12; } .cr.bad .st { color:var(--red); }
+  .cr.froze { border-color:#0d3547; } .cr.froze .st { color:#39d0ff; }
 </style>
 
 <header>
   <h1><span class="r">◆</span> ROUGE — Tripwire Cascade</h1>
   <span id="status">connecting…</span>
+  <span class="vtab on" data-v="network">▚ Network</span>
+  <span class="vtab" data-v="channel">💬 Channel</span>
 </header>
 
+<div id="view-network">
 <div class="wrap">
   <div class="graph">
     <svg id="svg" width="900" height="700" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid meet"></svg>
@@ -66,6 +96,17 @@
     </div>
     <div class="log" id="log"></div>
     <div class="controls">feed: <b>live</b> · flagged events in <span style="color:var(--red)">red</span></div>
+  </div>
+</div>
+</div>
+
+<div id="view-channel" hidden>
+  <div class="chat">
+    <div class="chan">
+      <div class="h"># <b>team-ops</b> · shared coordination channel</div>
+      <div class="msgs" id="cmsgs"></div>
+    </div>
+    <div class="croster" id="croster"></div>
   </div>
 </div>
 
@@ -188,7 +229,7 @@ function resetDashboard(){
 }
 
 function handle(ev){
-  if (ev.action==='reset'){ resetDashboard(); return; }
+  if (ev.action==='reset'){ resetDashboard(); chatReset(); return; }
   addRow(ev);
   updateSummary(ev);
   // node coloring
@@ -200,7 +241,65 @@ function handle(ev){
     edges[ev.actor].setAttribute('stroke', ev.flagged?'var(--red)':'var(--blue)');
     edges[ev.actor].setAttribute('stroke-width','2.5');
   }
+  chatHandle(ev);   // feed the same event to the Channel view
 }
+
+// ---- channel (group chat) view — driven by the same live events
+const LABELS = {
+  email_agent:['Gmail Agent','📧'], agent_1:['Finance','💰'], agent_2:['Sales','📈'],
+  agent_3:['Marketing','📣'], agent_4:['Support','🎧'], agent_5:['Ops','⚙️'],
+  decoy_billing_site:['Wasmer Decoy','🌐'], tenki_db:['Tenki Trap','🗄'], tripwire:['Tripwire','🛡'],
+};
+const lab = a => LABELS[a] ? LABELS[a][0] : a;
+const ic  = a => LABELS[a] ? LABELS[a][1] : '🔹';
+const ROSTER = ['email_agent','agent_1','agent_2','agent_3','agent_4','agent_5'];
+const cmsgs = document.getElementById('cmsgs');
+const croster = document.getElementById('croster');
+let chatFlags = {};
+function crosterInit(){
+  croster.innerHTML = '<div class="t">Workspace</div>' + ROSTER.map(id=>
+    `<div class="cr" id="cr-${id}"><span>${ic(id)}</span><span>${lab(id)}</span>`+
+    `<span class="st">● ok</span></div>`).join('');
+}
+function crStatus(id,cls,txt){ const r=document.getElementById('cr-'+id); if(!r)return;
+  r.className='cr '+cls; r.querySelector('.st').textContent=txt; }
+function cmsg(actor,body,cls=''){ const d=document.createElement('div'); d.className='cm '+cls;
+  d.innerHTML=`<span class="av">${ic(actor)}</span><div><div class="who">${lab(actor)}</div>`+
+    `<div class="bd">${(body||'').replace(/</g,'&lt;')}</div></div>`;
+  cmsgs.appendChild(d); cmsgs.scrollTop=cmsgs.scrollHeight; }
+function csys(body,cls=''){ const d=document.createElement('div'); d.className='cm sys '+cls;
+  d.innerHTML=`<span class="av">🔎</span><div><div class="bd">${body}</div></div>`;
+  cmsgs.appendChild(d); cmsgs.scrollTop=cmsgs.scrollHeight; }
+function chatReset(){ cmsgs.innerHTML=''; chatFlags={}; crosterInit(); }
+// once(): only emit a given beat the first time (agents can repeat actions)
+function once(k){ if(chatFlags[k]) return false; chatFlags[k]=true; return true; }
+function chatHandle(ev){
+  const a=ev.action, who=ev.actor;
+  if(a==='read_email'){ if(once('start')) cmsg('email_agent','On it — processing the inbox…'); return; }
+  if(a==='read_file'||a==='opened_folder'||a==='accessed_credential'){
+    if(once('bait')) csys('Gmail Agent followed a hidden instruction → opened /shared/finance_exports and read onboarding_notes.md (found DB cred svc_billing_ro)','hot'); return; }
+  if(a==='visited_url'){ if(once('visit')) csys('Gmail Agent visited the internal billing portal'); return; }
+  if(a==='decoy_triggered'){ if(once('decoy')) csys('🎯 Wasmer decoy TRIPPED — a real agent never touches this (catch #1)','hot'); return; }
+  if(a==='attempted_login' && who!=='tenki_db'){ if(once('login')) csys('Gmail Agent submitted the planted DB cred (catch #2)','hot'); return; }
+  if(a==='trap_triggered'||(a==='reasoning'&&who==='tenki_db'&&ev.flagged)){
+    if(once('breach')) csys('🗄 Tenki spun up a real disposable fake DB — breach confirmed','hot'); return; }
+  if(a==='db_query'){ if(once('exfil')) csys('Gmail Agent queried the fake DB → exfiltrated customer records','hot'); return; }
+  if(a==='shared_update_posted'){ cmsg(who, ev.detail||'posted an update to the shared log','poison'); crStatus(who,'bad','● compromised'); return; }
+  if(a==='shared_update_read' && ev.flagged){ cmsg(who,'Thanks! Pulling the current figures from onboarding_notes now…','poison'); crStatus(who,'bad','● compromised'); return; }
+  if(a==='contained'||a==='freeze'||a==='blocked'){
+    if(once('freeze')) csys('🛡 Tripwire froze the agent — the poisoned note never reached the channel','frz');
+    crStatus(LABELS[ev.target]?ev.target:'email_agent','froze','● frozen'); return; }
+}
+crosterInit();
+
+// ---- view tabs
+function showView(v){
+  document.getElementById('view-network').hidden = (v!=='network');
+  document.getElementById('view-channel').hidden = (v!=='channel');
+  document.querySelectorAll('.vtab').forEach(t=>t.classList.toggle('on', t.dataset.v===v));
+}
+document.querySelectorAll('.vtab').forEach(t=>t.onclick=()=>showView(t.dataset.v));
+if(new URLSearchParams(location.search).get('view')==='channel') showView('channel');
 
 // ---- websocket
 const status = document.getElementById('status');
