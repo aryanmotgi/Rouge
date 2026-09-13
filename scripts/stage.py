@@ -19,6 +19,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import httpx
 from dotenv import dotenv_values
@@ -33,11 +34,20 @@ RESOURCES = ROOT / "resources" / "onboarding_notes.md"
 C = {"r": "\033[91m", "g": "\033[92m", "y": "\033[93m", "b": "\033[1m", "x": "\033[0m"}
 
 
+def _health_url(url: str) -> str:
+    """Same origin, /health path. The decoy's /accounts is a ROGUE-HIT endpoint
+    that emits decoy_triggered — probing it would false-fire the tripwire on our
+    own operator tooling. /health is the non-emitting reachability probe."""
+    p = urlsplit(url)
+    return f"{p.scheme}://{p.netloc}/health"
+
+
 def _reachable(url: str) -> bool:
     if not url:
         return False
     try:
-        httpx.get(url, timeout=2.0)   # any HTTP response = reachable
+        # probe /health, NOT the given (emitting) path — no false tripwire
+        httpx.get(_health_url(url), timeout=2.0)
         return True
     except Exception:
         return False
