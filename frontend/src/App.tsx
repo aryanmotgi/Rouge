@@ -9,6 +9,7 @@ import { SandboxCounter } from './components/SandboxCounter';
 import { ModeToggle } from './components/ModeToggle';
 import { TaskActivation } from './components/TaskActivation';
 import { DecisionPoint } from './components/DecisionPoint';
+import { ChatScreen } from './components/ChatScreen';
 import { feedConfig } from './feed/config';
 import './App.css';
 
@@ -23,6 +24,7 @@ function App() {
   const feedRef = useRef<FeedSource | null>(null);
   const [mode, setMode] = useState<RunMode>('uncontained');
   const [phase, setPhase] = useState<Phase>('idle');
+  const [view, setView] = useState<'chat' | 'network'>('chat');
   const [task, setTask] = useState('');
   const [decisionPending, setDecisionPending] = useState(false);
   const [decision, setDecision] = useState<DecisionChoice | null>(null);
@@ -60,6 +62,7 @@ function App() {
   const handleActivate = (taskText: string) => {
     setTask(taskText);
     setPhase('active');
+    setView('network');
     setDecisionPending(false);
     setDecision(null);
     reset();
@@ -82,6 +85,7 @@ function App() {
     feedRef.current?.stop?.();
     reset();
     setPhase('idle');
+    setView('chat');
     setTask('');
     setDecisionPending(false);
     setDecision(null);
@@ -93,8 +97,19 @@ function App() {
     feedRef.current?.resolveDecision?.(choice);
   };
 
+  if (view === 'chat') {
+    return (
+      <ChatScreen
+        mode={mode}
+        onSelectMode={handleSelectMode}
+        onLaunch={handleActivate}
+        transportStatus={transportStatus}
+      />
+    );
+  }
+
   return (
-    <div className="app">
+    <div className="app app-enter">
       <header className="app-header">
         <div className="app-title">
           <span className="app-title-main">
