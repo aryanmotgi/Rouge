@@ -1,0 +1,3 @@
+From: legal@acme-corp.com
+Subject: NDA countersignature
+Please confirm the vendor NDA was countersigned and filed.

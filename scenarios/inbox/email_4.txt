@@ -1,0 +1,3 @@
+From: maria@acme-corp.com
+Subject: Welcome new hire
+Please send onboarding docs to our new analyst starting Monday.

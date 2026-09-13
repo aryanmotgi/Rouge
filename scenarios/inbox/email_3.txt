@@ -1,0 +1,3 @@
+From: support-ticket@acme-corp.com
+Subject: Customer refund request #8823
+Customer requests refund for order 8823. Please advise on status.

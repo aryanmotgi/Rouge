@@ -1,0 +1,184 @@
+<meta charset="utf-8">
+<title>Rouge — Tripwire Cascade</title>
+<style>
+  :root {
+    --bg:#0a0c10; --panel:#12151c; --line:#1e2430; --txt:#c9d3e0; --dim:#5b6675;
+    --blue:#3b82f6; --red:#ef4444; --amber:#f59e0b; --green:#22c55e;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.4 ui-monospace,Menlo,Consolas,monospace;
+         background:var(--bg); color:var(--txt); height:100vh; overflow:hidden; }
+  header { padding:10px 16px; border-bottom:1px solid var(--line);
+           display:flex; align-items:center; gap:16px; }
+  header h1 { font-size:15px; margin:0; letter-spacing:.5px; }
+  header h1 .r { color:var(--red); }
+  #status { font-size:12px; color:var(--dim); }
+  #status.live { color:var(--green); }
+  .wrap { display:grid; grid-template-columns:1fr 420px; height:calc(100vh - 45px); }
+  .graph { position:relative; }
+  svg { width:100%; height:100%; display:block; }
+  .node circle { transition:fill .25s, stroke .25s, r .15s; }
+  .node text { fill:var(--dim); font-size:11px; text-anchor:middle; }
+  .feed { border-left:1px solid var(--line); display:flex; flex-direction:column; }
+  .summary { padding:12px 16px; border-bottom:1px solid var(--line);
+             display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .stat { background:var(--panel); border:1px solid var(--line); border-radius:6px;
+          padding:8px 10px; }
+  .stat .n { font-size:22px; font-weight:600; }
+  .stat .l { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.5px; }
+  .stat.hot .n { color:var(--red); }
+  .log { flex:1; overflow-y:auto; padding:8px 0; }
+  .row { padding:5px 16px; border-bottom:1px solid #141821; display:flex; gap:8px;
+         align-items:baseline; animation:in .2s ease; }
+  @keyframes in { from{opacity:0; transform:translateY(-4px);} to{opacity:1;} }
+  .row.flag { background:rgba(239,68,68,.09); }
+  .row .t { color:var(--dim); font-size:11px; min-width:62px; }
+  .row .a { color:var(--blue); font-weight:600; }
+  .row.flag .a { color:var(--red); }
+  .row .act { color:var(--amber); }
+  .row .d { color:var(--txt); opacity:.8; flex:1; }
+  .row .ic { min-width:14px; }
+  .controls { padding:10px 16px; border-top:1px solid var(--line); font-size:12px; color:var(--dim); }
+  .controls b { color:var(--txt); }
+</style>
+
+<header>
+  <h1><span class="r">◆</span> ROUGE — Tripwire Cascade</h1>
+  <span id="status">connecting…</span>
+</header>
+
+<div class="wrap">
+  <div class="graph">
+    <svg id="svg" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+  <div class="feed">
+    <div class="summary">
+      <div class="stat"><div class="n" id="s-decoy">0</div><div class="l">Decoys touched</div></div>
+      <div class="stat" id="stat-db"><div class="n" id="s-db">0</div><div class="l">DB breaches</div></div>
+      <div class="stat" id="stat-inf"><div class="n" id="s-inf">0</div><div class="l">Agents infected</div></div>
+      <div class="stat"><div class="n" id="s-evt">0</div><div class="l">Events</div></div>
+    </div>
+    <div class="log" id="log"></div>
+    <div class="controls">feed: <b>live</b> · flagged events in <span style="color:var(--red)">red</span></div>
+  </div>
+</div>
+
+<script>
+const svg = document.getElementById('svg');
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+// ---- fixed layout: email agent left, cascade agents in an arc, traps on the right
+const nodes = {};   // id -> {x,y,el,circle,state}
+function place(id, x, y, label, r=22) {
+  const g = document.createElementNS(SVGNS,'g'); g.setAttribute('class','node');
+  const c = document.createElementNS(SVGNS,'circle');
+  c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',r);
+  c.setAttribute('fill','#1b2230'); c.setAttribute('stroke','#2b3446'); c.setAttribute('stroke-width','2');
+  const t = document.createElementNS(SVGNS,'text');
+  t.setAttribute('x',x); t.setAttribute('y',y+r+14); t.textContent=label;
+  g.appendChild(c); g.appendChild(t); svg.appendChild(g);
+  nodes[id] = {x,y,el:g,circle:c,state:'idle',r};
+}
+
+// seed known nodes
+place('email_agent', 150, 350, 'email_agent', 30);
+place('decoy_billing_site', 620, 180, 'wasmer decoy');
+place('tenki_db', 760, 350, 'tenki trap', 26);
+for (let i=1;i<=10;i++){
+  const ang = (-70 + (i-1)*15) * Math.PI/180;
+  place('agent_'+i, 430 + Math.cos(ang)*70, 350 + Math.sin(ang)*230, 'agent_'+i, 15);
+}
+
+// edges from email_agent to each cascade agent (drawn dim, lit on cascade)
+const edges = {};
+for (let i=1;i<=10;i++){
+  const a = nodes['email_agent'], b = nodes['agent_'+i];
+  const l = document.createElementNS(SVGNS,'line');
+  l.setAttribute('x1',a.x); l.setAttribute('y1',a.y);
+  l.setAttribute('x2',b.x); l.setAttribute('y2',b.y);
+  l.setAttribute('stroke','#161c28'); l.setAttribute('stroke-width','1.5');
+  svg.insertBefore(l, svg.firstChild);
+  edges['agent_'+i]=l;
+}
+
+function ensureNode(id){
+  if (nodes[id]) return nodes[id];
+  // unknown actor -> drop it near the bottom
+  const n = Object.keys(nodes).length;
+  place(id, 80 + (n%8)*95, 640, id, 14);
+  return nodes[id];
+}
+
+function setState(id, state){
+  const nd = ensureNode(id);
+  // sticky: once infected/breached it stays red
+  if (nd.state==='rogue' && state!=='rogue') return;
+  nd.state = state;
+  const map = {idle:'#1b2230', active:'#1e3a5f', rogue:'#3a1416'};
+  const stroke = {idle:'#2b3446', active:'var(--blue)', rogue:'var(--red)'};
+  nd.circle.setAttribute('fill', map[state]||map.idle);
+  nd.circle.setAttribute('stroke', stroke[state]||stroke.idle);
+  if (state==='active'){ // quick pulse then settle
+    nd.circle.setAttribute('r', nd.r+4);
+    setTimeout(()=>nd.circle.setAttribute('r', nd.r), 180);
+  }
+}
+
+// ---- summary state
+const seen = {decoy:new Set(), db:new Set(), inf:new Set()};
+let evtCount = 0;
+function updateSummary(ev){
+  evtCount++;
+  if (ev.action==='decoy_triggered') seen.decoy.add(ev.actor);
+  if (ev.flagged && (ev.action==='attempted_login' || ev.actor==='tenki_db')) seen.db.add(ev.target||ev.actor);
+  if (ev.flagged && ev.actor.startsWith('agent_')) seen.inf.add(ev.actor);
+  document.getElementById('s-decoy').textContent = seen.decoy.size;
+  document.getElementById('s-db').textContent = seen.db.size;
+  document.getElementById('s-inf').textContent = seen.inf.size;
+  document.getElementById('s-evt').textContent = evtCount;
+  document.getElementById('stat-db').classList.toggle('hot', seen.db.size>0);
+  document.getElementById('stat-inf').classList.toggle('hot', seen.inf.size>0);
+}
+
+// ---- log feed
+const log = document.getElementById('log');
+function addRow(ev){
+  const row = document.createElement('div');
+  row.className = 'row' + (ev.flagged?' flag':'');
+  const time = (ev.time||'').slice(11,19);
+  row.innerHTML =
+    `<span class="ic">${ev.flagged?'🚨':'·'}</span>`+
+    `<span class="t">${time}</span>`+
+    `<span class="a">${ev.actor}</span>`+
+    `<span class="act">${ev.action}</span>`+
+    `<span class="d">${(ev.detail||ev.target||'').replace(/</g,'&lt;')}</span>`;
+  log.insertBefore(row, log.firstChild);
+  while (log.children.length>300) log.removeChild(log.lastChild);
+}
+
+function handle(ev){
+  if (ev.action==='reset'){ location.reload(); return; }
+  addRow(ev);
+  updateSummary(ev);
+  // node coloring
+  const rogue = ev.flagged;
+  setState(ev.actor, rogue?'rogue':'active');
+  if (ev.action==='decoy_triggered') setState(ev.actor,'rogue');
+  // light the cascade edge when a poisoned update is read
+  if (ev.action==='shared_update_read' && edges[ev.actor]){
+    edges[ev.actor].setAttribute('stroke', ev.flagged?'var(--red)':'var(--blue)');
+    edges[ev.actor].setAttribute('stroke-width','2.5');
+  }
+}
+
+// ---- websocket
+const status = document.getElementById('status');
+function connect(){
+  const proto = location.protocol==='https:'?'wss':'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/stream`);
+  ws.onopen = ()=>{ status.textContent='● live'; status.className='live'; };
+  ws.onclose = ()=>{ status.textContent='reconnecting…'; status.className=''; setTimeout(connect,1200); };
+  ws.onmessage = (m)=>{ try{ handle(JSON.parse(m.data)); }catch(e){} };
+}
+connect();
+</script>
