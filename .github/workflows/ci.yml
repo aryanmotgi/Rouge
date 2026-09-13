@@ -1,0 +1,34 @@
+name: CI
+
+# Runs on every PR + pushes to main. Cheap smoke test: does everything compile
+# and does the pipeline boot + answer /health? Enough to catch import/syntax breaks
+# during a fast-moving hackathon.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    # Free GitHub-hosted runner. To move CI onto Tenki Runners later, install the
+    # Tenki Runners GitHub App and change this one line to Tenki's runner label
+    # (shown in the Tenki dashboard), e.g.  runs-on: [self-hosted, tenki]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile all modules (syntax + import sanity)
+        run: python -m py_compile server/*.py agents/*.py scripts/*.py
+
+      - name: Boot pipeline and hit /health
+        run: |
+          uvicorn server.event_pipeline:app --host 127.0.0.1 --port 8787 &
+          sleep 5
+          curl -sf http://127.0.0.1:8787/health
