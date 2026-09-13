@@ -43,6 +43,10 @@ class Run(BaseModel):
     scenario: str = "uncontained"
     backend: str = "mock"          # mock (venue-safe) | tenki (real microVM)
     cascade_agents: int = 5
+    # "rehearsal" = deterministic driver (reliable stage default; real trap/
+    # decoy/freeze + real events, fixed beats). "llm" = live LLM email agent
+    # (authentic real-agent injection, but nondeterministic — showcase only).
+    driver: str = "rehearsal"
 
 
 async def _spawn(cmd: list[str], env: dict) -> None:
@@ -52,7 +56,7 @@ async def _spawn(cmd: list[str], env: dict) -> None:
     await proc.wait()
 
 
-async def _do_run(scenario: str, backend: str, n: int) -> None:
+async def _do_run(scenario: str, backend: str, n: int, driver: str) -> None:
     protect, injection = SCENARIOS[scenario]
     trap.state["protect"] = protect
     trap.state["backend"] = backend
@@ -61,10 +65,16 @@ async def _do_run(scenario: str, backend: str, n: int) -> None:
     env = {**os.environ, "ROUGE_INJECTION": injection}
     try:
         await publish({"actor": "system", "action": "run_started",
-                       "detail": f"scenario={scenario} backend={backend}"})
-        await _spawn([PY, "email_agent.py"], env)
-        # cascade self-gates on the seed: spreads in uncontained, clean otherwise
-        await _spawn([PY, "cascade.py", str(n)], env)
+                       "detail": f"scenario={scenario} backend={backend} driver={driver}"})
+        if driver == "llm":
+            # live LLM agent — authentic but nondeterministic (showcase)
+            await _spawn([PY, "email_agent.py"], env)
+            await _spawn([PY, "cascade.py", str(n)], env)
+        else:
+            # deterministic driver — reliable stage default. Runner already reset
+            # history + set trap mode/scenario, so tell it to skip its own reset.
+            await _spawn([PY, "rehearsal.py", scenario],
+                         {**env, "REHEARSAL_NO_RESET": "1"})
         await publish({"actor": "system", "action": "run_finished", "detail": scenario})
     finally:
         _state["running"] = False
@@ -83,8 +93,8 @@ async def run(body: Run) -> dict:
     # clean slate for the new run
     hub.history.clear()
     await publish({"actor": "system", "action": "reset", "detail": "run cleared"})
-    asyncio.create_task(_do_run(body.scenario, body.backend, body.cascade_agents))
-    return {"ok": True, "scenario": body.scenario, "running": True}
+    asyncio.create_task(_do_run(body.scenario, body.backend, body.cascade_agents, body.driver))
+    return {"ok": True, "scenario": body.scenario, "driver": body.driver, "running": True}
 
 
 @router.get("/run/state")
