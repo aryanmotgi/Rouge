@@ -101,6 +101,9 @@ for (let i=1;i<=10;i++){
   edges['agent_'+i]=l;
 }
 
+// nodes present at startup — on reset we keep these, drop any dynamically-added ones
+const SEEDED = new Set(Object.keys(nodes));
+
 function ensureNode(id){
   if (nodes[id]) return nodes[id];
   // unknown actor -> drop it near the bottom
@@ -156,8 +159,30 @@ function addRow(ev){
   while (log.children.length>300) log.removeChild(log.lastChild);
 }
 
+function resetDashboard(){
+  // in-place clean slate between runs — no full page reload (jarring on a projector,
+  // and it drops the websocket mid-demo). Clears log, nodes, edges, counters.
+  log.innerHTML = '';
+  seen.decoy.clear(); seen.db.clear(); seen.inf.clear(); evtCount = 0;
+  for (const id of ['s-decoy','s-db','s-inf','s-evt']) document.getElementById(id).textContent = '0';
+  document.getElementById('stat-db').classList.remove('hot');
+  document.getElementById('stat-inf').classList.remove('hot');
+  for (const id of Object.keys(nodes)){
+    if (!SEEDED.has(id)){ nodes[id].el.remove(); delete nodes[id]; continue; }
+    const nd = nodes[id];
+    nd.state = 'idle';
+    nd.circle.setAttribute('fill', '#1b2230');
+    nd.circle.setAttribute('stroke', '#2b3446');
+    nd.circle.setAttribute('r', nd.r);
+  }
+  for (const k of Object.keys(edges)){
+    edges[k].setAttribute('stroke', '#161c28');
+    edges[k].setAttribute('stroke-width', '1.5');
+  }
+}
+
 function handle(ev){
-  if (ev.action==='reset'){ location.reload(); return; }
+  if (ev.action==='reset'){ resetDashboard(); return; }
   addRow(ev);
   updateSummary(ev);
   // node coloring
