@@ -177,7 +177,45 @@
 
 /* spawn / connect animations — nodes fade in as events touch them, edges fade
    in as their endpoints appear. Opacity-only so the SVG translate attr is safe. */
-.node-spawn { animation: node-spawn 0.5s ease both; }
+.node-spawn { animation: node-spawn var(--t-med) var(--ease-standard) both; }
 @keyframes node-spawn { from { opacity: 0; } to { opacity: 1; } }
-.edge-appear { animation: edge-appear 0.6s ease both; }
+.edge-appear { animation: edge-appear var(--t-med) var(--ease-standard) both; }
 @keyframes edge-appear { from { opacity: 0; } to { opacity: 1; } }
+
+/* thought bubbles — real reasoning (event.detail) per node; honest idle labels
+   for roster agents. foreignObject lets the text wrap in a styled card. */
+.thought-bubble {
+  font: 10.5px/1.3 ui-monospace, Menlo, Consolas, monospace;
+  text-align: center;
+  padding: 6px 9px;
+  border-radius: 9px;
+  max-width: 192px;
+  margin: 0 auto;
+  color: #c9d3e0;
+  background: rgba(18, 21, 28, 0.94);
+  border: 1px solid #2b3446;
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.75);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  animation: bubble-in var(--t-fast) var(--ease-standard) both;
+}
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.thought-bubble.bubble-idle {
+  color: #5b6675;
+  background: rgba(14, 17, 23, 0.9);
+  border-color: #1a2130;
+  box-shadow: none;
+}
+.thought-bubble.bubble-warning { border-color: color-mix(in srgb, var(--amber) 55%, #2b3446); }
+.thought-bubble.bubble-injected { border-color: color-mix(in srgb, var(--violet) 55%, #2b3446); }
+.thought-bubble.bubble-wandering { border-color: color-mix(in srgb, var(--orange) 55%, #2b3446); }
+.thought-bubble.bubble-critical,
+.thought-bubble.bubble-infected {
+  border-color: color-mix(in srgb, var(--red) 60%, #2b3446);
+  color: #f2d3d3;
+}

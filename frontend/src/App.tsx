@@ -153,6 +153,7 @@ function App() {
       {phase === 'active' && paused && (
         <div
           role="status"
+          className="pause-banner"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             gap: 16, margin: '0 0 12px', padding: '12px 18px', borderRadius: 10,

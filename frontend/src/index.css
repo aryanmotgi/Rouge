@@ -103,3 +103,10 @@ html {
   border: 2px solid var(--panel-bg-raised);
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+/* shared motion tokens — reuse the existing --ease-standard, add timings so the
+   whole flow shares one timing system */
+:root {
+  --t-fast: 0.3s;
+  --t-med: 0.5s;
+}

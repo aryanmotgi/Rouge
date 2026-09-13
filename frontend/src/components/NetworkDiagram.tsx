@@ -66,14 +66,31 @@ export function NetworkDiagram() {
               <text className="node-label" y={NODE_RADIUS[node.kind] + 16}>
                 {node.label}
               </text>
-              {activity && (
-                // Keyed on the activity nonce so each new event remounts this
-                // element — that's what makes it re-play its entrance
-                // animation per email check instead of only once.
-                <text key={activity.nonce} className="node-activity" y={NODE_RADIUS[node.kind] + 32}>
-                  {activity.label}
-                </text>
-              )}
+              {(() => {
+                // real thought (event.detail) when the node has acted; honest
+                // idle-role label for roster agents that haven't yet.
+                const thought = activity?.label;
+                const idle = node.kind === 'cascade' ? 'idle · watching shared log' : null;
+                const text = thought ?? idle;
+                if (!text) return null;
+                return (
+                  <foreignObject
+                    x={-96}
+                    y={NODE_RADIUS[node.kind] + 24}
+                    width={192}
+                    height={52}
+                    style={{ overflow: 'visible' }}
+                  >
+                    {/* keyed on nonce so a new thought remounts + re-animates */}
+                    <div
+                      key={activity?.nonce ?? 'idle'}
+                      className={`thought-bubble ${thought ? `bubble-${status}` : 'bubble-idle'}`}
+                    >
+                      {text}
+                    </div>
+                  </foreignObject>
+                );
+              })()}
             </g>
           );
         })}
