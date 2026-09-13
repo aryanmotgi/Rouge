@@ -1,0 +1,85 @@
+.decision-point {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 1px solid var(--red);
+  border-radius: 10px;
+  padding: 12px 18px;
+  background: color-mix(in srgb, var(--red) 10%, var(--panel-bg-raised));
+  animation: decision-in 0.35s var(--ease-standard);
+}
+
+@keyframes decision-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decision-point { animation: none; }
+}
+
+.decision-point-message {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.decision-point-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--red);
+}
+
+.decision-point-detail {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.decision-point-actions {
+  display: flex;
+  gap: 14px;
+}
+
+/* 3D "press" button — adapted from a uiverse.io element (Voxybuns, MIT): a
+   solid base layer with a raised face that lifts on hover and presses flat
+   on click, rather than a flat button with just a color change. */
+.decision-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--decision-btn-base);
+}
+
+.decision-btn-top {
+  display: block;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--decision-btn-face);
+  color: var(--decision-btn-text);
+  transform: translateY(-3px);
+  transition: transform 0.15s var(--ease-standard);
+}
+
+.decision-btn:hover .decision-btn-top { transform: translateY(-4px); }
+.decision-btn:active .decision-btn-top { transform: translateY(0); }
+
+.decision-btn-freeze {
+  --decision-btn-base: color-mix(in srgb, var(--cyan) 45%, black);
+  --decision-btn-face: var(--cyan);
+  --decision-btn-text: #04211f;
+}
+
+.decision-btn-observe {
+  --decision-btn-base: color-mix(in srgb, var(--red) 45%, black);
+  --decision-btn-face: var(--red);
+  --decision-btn-text: #2a0508;
+}

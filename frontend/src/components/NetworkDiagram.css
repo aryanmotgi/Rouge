@@ -1,0 +1,176 @@
+.network-diagram {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.network-svg {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.edge {
+  stroke: var(--line-idle);
+  stroke-width: 2;
+  transition: stroke 0.4s var(--ease-standard), stroke-width 0.4s var(--ease-standard);
+}
+
+.edge-dashed {
+  stroke-dasharray: 6 6;
+}
+
+.edge-warning { stroke: var(--amber); }
+.edge-critical { stroke: var(--red); }
+.edge-infected { stroke: var(--red); }
+
+.edge-pulsing {
+  stroke-width: 4;
+  animation: edge-pulse 1.4s var(--ease-standard);
+}
+
+@keyframes edge-pulse {
+  0% { stroke-width: 6; filter: drop-shadow(0 0 6px currentColor); }
+  100% { stroke-width: 2; filter: none; }
+}
+
+.node-circle {
+  fill: var(--panel-bg);
+  stroke: var(--line-idle);
+  stroke-width: 2;
+  transition: fill 0.4s var(--ease-standard), stroke 0.4s var(--ease-standard);
+}
+
+.node-ring {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 3;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.node-label {
+  fill: var(--text-dim);
+  font-size: 13px;
+  text-anchor: middle;
+  font-family: var(--font-mono);
+}
+
+.node-activity {
+  fill: var(--text);
+  font-size: 11px;
+  text-anchor: middle;
+  font-family: var(--font-mono);
+  animation: activity-in 0.4s var(--ease-standard);
+}
+
+@keyframes activity-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.node-active .node-circle { stroke: var(--blue); }
+.node-active .node-ring { stroke: var(--blue); opacity: 0.5; }
+
+.node-warning .node-circle { stroke: var(--amber); fill: color-mix(in srgb, var(--amber) 15%, var(--panel-bg)); }
+.node-warning .node-ring {
+  stroke: var(--amber);
+  opacity: 0.55;
+  animation: ring-flash-amber 0.8s var(--ease-standard) forwards;
+}
+
+.node-injected .node-circle { stroke: var(--violet); fill: color-mix(in srgb, var(--violet) 16%, var(--panel-bg)); }
+.node-injected .node-ring {
+  stroke: var(--violet);
+  opacity: 0.6;
+  animation: ring-flash-violet 0.8s var(--ease-standard) forwards;
+}
+
+.node-wandering .node-circle { stroke: var(--orange); fill: color-mix(in srgb, var(--orange) 20%, var(--panel-bg)); }
+.node-wandering .node-ring {
+  stroke: var(--orange);
+  opacity: 0.65;
+  animation: ring-flash-orange 0.8s var(--ease-standard) forwards;
+}
+
+.node-critical .node-circle,
+.node-infected .node-circle {
+  stroke: var(--red);
+  fill: color-mix(in srgb, var(--red) 20%, var(--panel-bg));
+}
+.node-critical .node-ring,
+.node-infected .node-ring {
+  stroke: var(--red);
+  opacity: 0.65;
+  animation: ring-flash-red 0.8s var(--ease-standard) forwards;
+}
+
+.node-frozen .node-circle {
+  stroke: var(--cyan);
+  fill: color-mix(in srgb, var(--cyan) 25%, var(--panel-bg));
+}
+.node-frozen .node-ring {
+  stroke: var(--cyan);
+  opacity: 0.8;
+  animation: ring-flash-cyan 0.8s var(--ease-standard) forwards;
+}
+
+/* One-shot flash on status change, settling to a static ring — never a
+   looping idle animation. Each status gets its own keyframes so the resting
+   opacity matches its own final value. */
+@keyframes ring-flash-amber {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.55; }
+}
+@keyframes ring-flash-violet {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+@keyframes ring-flash-orange {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.65; }
+}
+@keyframes ring-flash-red {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.65; }
+}
+@keyframes ring-flash-cyan {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-pulsing,
+  .node-ring,
+  .node-activity {
+    animation: none !important;
+  }
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  list-style: none;
+  padding: 8px 4px 0;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.legend li { display: flex; align-items: center; gap: 6px; }
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot.node-active { background: var(--blue); }
+.dot.node-warning { background: var(--amber); }
+.dot.node-injected { background: var(--violet); }
+.dot.node-wandering { background: var(--orange); }
+.dot.node-critical { background: var(--red); }
+.dot.node-infected { background: var(--red); }
+.dot.node-frozen { background: var(--cyan); }
