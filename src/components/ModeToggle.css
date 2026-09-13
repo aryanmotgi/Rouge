@@ -1,9 +1,15 @@
 .mode-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
+}
+
+.mode-toggle-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
 }
 
 .mode-buttons {
@@ -20,7 +26,7 @@
   background: var(--panel-bg);
   color: var(--text-dim);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s var(--ease-standard), border-color 0.2s var(--ease-standard), color 0.2s var(--ease-standard);
 }
 
 .mode-btn:hover:not(:disabled) { border-color: var(--text-dim); color: var(--text); }
@@ -28,35 +34,3 @@
 
 .mode-btn-clean.active { background: var(--green); border-color: var(--green); color: #08130a; }
 .mode-btn-uncontained.active { background: var(--red); border-color: var(--red); color: #fff; }
-.mode-btn-protected.active { background: var(--blue); border-color: var(--blue); color: #fff; }
-
-.mode-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.restart-btn {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-}
-.restart-btn:hover:not(:disabled) { color: var(--text); border-color: var(--text-dim); }
-.restart-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.transport-status {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.status-connected { color: var(--green); }
-.status-error { color: var(--red); }
-.status-connecting { color: var(--amber); }

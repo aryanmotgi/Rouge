@@ -18,11 +18,12 @@ function nodeCenter(id: string) {
 export function NetworkDiagram() {
   const nodeStatus = useEventStore((s) => s.nodeStatus);
   const edgePulses = useEventStore((s) => s.edgePulses);
+  const nodeActivity = useEventStore((s) => s.nodeActivity);
 
   return (
     <div className="network-diagram">
       <h2 className="panel-title">Network</h2>
-      <svg viewBox="0 0 960 600" className="network-svg" role="img" aria-label="Agent network diagram">
+      <svg viewBox="0 0 1000 620" className="network-svg" role="img" aria-label="Agent network diagram">
         {EDGE_LAYOUT.map((edge) => {
           const from = nodeCenter(edge.from);
           const to = nodeCenter(edge.to);
@@ -47,6 +48,7 @@ export function NetworkDiagram() {
 
         {NODE_LAYOUT.map((node) => {
           const status: NodeStatus = nodeStatus[node.id] ?? 'idle';
+          const activity = nodeActivity[node.id];
           return (
             <g key={node.id} className={`node node-${status}`} transform={`translate(${node.x},${node.y})`}>
               <circle r={NODE_RADIUS[node.kind]} className="node-circle" />
@@ -54,6 +56,14 @@ export function NetworkDiagram() {
               <text className="node-label" y={NODE_RADIUS[node.kind] + 16}>
                 {node.label}
               </text>
+              {activity && (
+                // Keyed on the activity nonce so each new event remounts this
+                // element — that's what makes it re-play its entrance
+                // animation per email check instead of only once.
+                <text key={activity.nonce} className="node-activity" y={NODE_RADIUS[node.kind] + 32}>
+                  {activity.label}
+                </text>
+              )}
             </g>
           );
         })}
@@ -62,6 +72,8 @@ export function NetworkDiagram() {
       <ul className="legend">
         <li><span className="dot node-active" /> active</li>
         <li><span className="dot node-warning" /> warning</li>
+        <li><span className="dot node-injected" /> injected</li>
+        <li><span className="dot node-wandering" /> wandering</li>
         <li><span className="dot node-critical" /> critical</li>
         <li><span className="dot node-infected" /> infected</li>
         <li><span className="dot node-frozen" /> frozen</li>

@@ -11,7 +11,10 @@
   --red: #ff4d5e;
   --green: #34c77b;
   --cyan: #35d6c8;
+  --violet: #a78bfa;
+  --orange: #ff8a3d;
   --font-mono: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
 
   color-scheme: dark;
   background: var(--bg);

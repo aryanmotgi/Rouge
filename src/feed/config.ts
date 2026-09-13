@@ -3,7 +3,7 @@ export type FeedTransport = 'mock' | 'sse' | 'websocket';
 export interface FeedConfig {
   transport: FeedTransport;
   eventsUrl: string;
-  initialScenario: 'clean' | 'uncontained' | 'protected';
+  initialScenario: 'clean' | 'uncontained';
 }
 
 // Transport is undecided (SSE vs WebSocket) until the backend track confirms

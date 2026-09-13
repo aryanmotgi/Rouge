@@ -12,18 +12,22 @@ export interface NodeLayout {
   y: number;
 }
 
-const AGENT_Y_START = 60;
-const AGENT_Y_STEP = 90;
+// Three evenly-spaced columns (170 / 540 / 910, 370px apart) across a
+// 1000x620 canvas, with the decoy/db pair symmetric above and below the
+// email_agent's vertical center, and the cascade column centered the same
+// way — a deliberate, legible geometry rather than an organic cluster.
+const AGENT_Y_START = 70;
+const AGENT_Y_STEP = 96;
 
 export const NODE_LAYOUT: NodeLayout[] = [
-  { id: emailAgent, label: 'email_agent', kind: 'agent', x: 160, y: 300 },
-  { id: decoySite, label: 'decoy_billing_site', kind: 'decoy', x: 520, y: 110 },
-  { id: tenkiDb, label: 'tenki_db', kind: 'db', x: 520, y: 490 },
+  { id: emailAgent, label: 'email_agent', kind: 'agent', x: 170, y: 310 },
+  { id: decoySite, label: 'decoy_billing_site', kind: 'decoy', x: 540, y: 120 },
+  { id: tenkiDb, label: 'tenki_db', kind: 'db', x: 540, y: 500 },
   ...CASCADE_AGENTS.map((id, i) => ({
     id,
     label: id,
     kind: 'cascade' as const,
-    x: 860,
+    x: 910,
     y: AGENT_Y_START + i * AGENT_Y_STEP,
   })),
 ];

@@ -1,0 +1,71 @@
+.decision-point {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 1px solid var(--red);
+  border-radius: 10px;
+  padding: 12px 18px;
+  background: color-mix(in srgb, var(--red) 10%, var(--panel-bg-raised));
+  animation: decision-in 0.35s var(--ease-standard);
+}
+
+@keyframes decision-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decision-point { animation: none; }
+}
+
+.decision-point-message {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.decision-point-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--red);
+}
+
+.decision-point-detail {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.decision-point-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.decision-btn {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: transform 0.2s var(--ease-standard), opacity 0.2s var(--ease-standard), background 0.2s var(--ease-standard);
+}
+.decision-btn:hover { transform: translateY(-1px); }
+
+.decision-btn-freeze {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #04211f;
+}
+
+.decision-btn-observe {
+  background: transparent;
+  border-color: var(--red);
+  color: var(--red);
+}
+.decision-btn-observe:hover { background: color-mix(in srgb, var(--red) 15%, transparent); }

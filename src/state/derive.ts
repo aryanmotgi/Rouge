@@ -6,14 +6,21 @@ const A = KNOWN_ACTIONS;
 // Ordered low -> high. A node only ever moves up this ladder within a run;
 // it resets to 'idle' on scenario restart/switch, never mid-run, so the map
 // reads as a persistent record of "what happened so far" during the demo.
-export type NodeStatus = 'idle' | 'active' | 'warning' | 'critical' | 'infected' | 'frozen';
+// 'injected' marks the instruction landing/being followed (still notionally
+// on-task); 'wandering' marks the moment the agent starts acting outside its
+// original task (touching the credential file) — both sit strictly between
+// 'warning' and 'critical' so a node visiting the decoy afterward (which
+// only asks for 'warning') never visually downgrades.
+export type NodeStatus = 'idle' | 'active' | 'warning' | 'injected' | 'wandering' | 'critical' | 'infected' | 'frozen';
 const RANK: Record<NodeStatus, number> = {
   idle: 0,
   active: 1,
   warning: 2,
-  critical: 3,
-  infected: 3,
-  frozen: 4,
+  injected: 3,
+  wandering: 4,
+  critical: 5,
+  infected: 5,
+  frozen: 6,
 };
 
 export function upgradeStatus(current: NodeStatus, next: NodeStatus): NodeStatus {
@@ -50,8 +57,20 @@ export function deriveEffects(event: TripwireEvent): DerivedEffects {
   switch (event.action) {
     case A.readEmail:
     case A.draftReply:
-    case 'read_resource':
-      nodeEffects.push({ nodeId: emailAgent, status: event.flagged ? 'warning' : 'active' });
+      // A flagged read is the injection landing — the only flagged read in
+      // the current scenarios is the poisoned final email, so this is where
+      // "instruction found" becomes visible on the node.
+      nodeEffects.push({ nodeId: emailAgent, status: event.flagged ? 'injected' : 'active' });
+      break;
+
+    case A.openedFolder:
+      // Still following the injected instruction — not yet off-task.
+      nodeEffects.push({ nodeId: emailAgent, status: 'injected' });
+      break;
+
+    case A.accessedCredential:
+      // The agent touches a file it was never asked for — off-task begins.
+      nodeEffects.push({ nodeId: emailAgent, status: 'wandering' });
       break;
 
     case A.visitedUrl:

@@ -27,6 +27,8 @@ export const cascadeAgentId = (n: number) => `agent_${n}`;
 export const KNOWN_ACTIONS = {
   readEmail: 'read_email',
   draftReply: 'draft_reply',
+  openedFolder: 'opened_folder',
+  accessedCredential: 'accessed_credential',
   visitedUrl: 'visited_url',
   decoyTriggered: 'decoy_triggered',
   attemptedLogin: 'attempted_login',

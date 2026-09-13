@@ -4,6 +4,10 @@ import './SandboxCounter.css';
 
 const SANDBOX_TARGET = 100;
 
+interface SandboxCounterProps {
+  active: boolean;
+}
+
 /**
  * Purely cosmetic "sandboxes spinning up" odometer — NOT derived from the
  * event stream or tied to any real process. It exists to sell the scale of
@@ -11,12 +15,22 @@ const SANDBOX_TARGET = 100;
  * that's real, and is visually distinct on purpose: never let the two blend
  * together, since real model calls cost time/money and only a handful of
  * agents are actually reasoning live.
+ *
+ * Ramps up only once a run is activated, and holds still once settled — no
+ * idle jitter — so the dashboard reads as genuinely idle before activation
+ * and calm (not decoratively "alive") once a run is underway.
  */
-export function SandboxCounter() {
+export function SandboxCounter({ active }: SandboxCounterProps) {
   const [count, setCount] = useState(0);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (!active) {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      setCount(0);
+      return;
+    }
+
     const start = performance.now();
     const rampMs = 1800;
 
@@ -30,11 +44,6 @@ export function SandboxCounter() {
         rafRef.current = requestAnimationFrame(tick);
       } else {
         setCount(SANDBOX_TARGET);
-        // gentle idle jitter so it still feels "alive" once settled
-        const jitter = setInterval(() => {
-          setCount(SANDBOX_TARGET - Math.floor(Math.random() * 4));
-        }, 900);
-        return () => clearInterval(jitter);
       }
     }
 
@@ -42,7 +51,7 @@ export function SandboxCounter() {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+  }, [active]);
 
   return (
     <div className="counter-row">

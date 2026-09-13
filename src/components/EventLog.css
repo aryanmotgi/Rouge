@@ -5,6 +5,43 @@
   min-height: 0;
 }
 
+.event-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.event-log-header .panel-title { margin: 0; }
+
+.recording-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--red);
+  margin-bottom: 10px;
+}
+
+.recording-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: recording-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes recording-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recording-dot { animation: none; }
+}
+
 .event-log-scroll {
   flex: 1;
   overflow-y: auto;
@@ -25,7 +62,7 @@
   border-radius: 6px;
   padding: 6px 10px;
   background: var(--panel-bg);
-  animation: row-enter 0.25s ease-out;
+  animation: row-enter 0.3s var(--ease-standard);
 }
 
 .event-row.flagged {
@@ -36,6 +73,10 @@
 @keyframes row-enter {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-row { animation: none; }
 }
 
 .event-row-head {

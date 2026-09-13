@@ -2,38 +2,32 @@ import type { ScenarioId } from '../feed/FeedSource';
 import { SCENARIO_LABELS } from '../mock/scenarios';
 import './ModeToggle.css';
 
-const MODES: ScenarioId[] = ['clean', 'uncontained', 'protected'];
+const MODES: ScenarioId[] = ['clean', 'uncontained'];
 
 interface ModeToggleProps {
   activeMode: ScenarioId;
   onSelect: (mode: ScenarioId) => void;
-  onRestart: () => void;
-  controllable: boolean;
-  transportStatus: string;
+  disabled: boolean;
 }
 
-export function ModeToggle({ activeMode, onSelect, onRestart, controllable, transportStatus }: ModeToggleProps) {
+// Mode selection only — the run happens before activation, then locks once a
+// task is submitted. Restart/new-task controls and transport status live in
+// TaskActivation, next to the thing they actually operate on.
+export function ModeToggle({ activeMode, onSelect, disabled }: ModeToggleProps) {
   return (
     <div className="mode-toggle">
+      <span className="mode-toggle-label">Mode</span>
       <div className="mode-buttons">
         {MODES.map((mode) => (
           <button
             key={mode}
             className={`mode-btn mode-btn-${mode} ${activeMode === mode ? 'active' : ''}`}
             onClick={() => onSelect(mode)}
-            disabled={!controllable}
+            disabled={disabled}
           >
             {SCENARIO_LABELS[mode]}
           </button>
         ))}
-      </div>
-      <div className="mode-controls">
-        <button className="restart-btn" onClick={onRestart} disabled={!controllable}>
-          ↻ Restart run
-        </button>
-        <span className={`transport-status status-${transportStatus}`}>
-          {controllable ? 'mock feed' : 'live feed'} · {transportStatus}
-        </span>
       </div>
     </div>
   );

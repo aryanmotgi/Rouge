@@ -13,7 +13,7 @@
 .edge {
   stroke: var(--line-idle);
   stroke-width: 2;
-  transition: stroke 0.3s ease;
+  transition: stroke 0.4s var(--ease-standard), stroke-width 0.4s var(--ease-standard);
 }
 
 .edge-dashed {
@@ -26,7 +26,7 @@
 
 .edge-pulsing {
   stroke-width: 4;
-  animation: edge-pulse 1.4s ease-out;
+  animation: edge-pulse 1.4s var(--ease-standard);
 }
 
 @keyframes edge-pulse {
@@ -38,7 +38,7 @@
   fill: var(--panel-bg);
   stroke: var(--line-idle);
   stroke-width: 2;
-  transition: fill 0.3s ease, stroke 0.3s ease;
+  transition: fill 0.4s var(--ease-standard), stroke 0.4s var(--ease-standard);
 }
 
 .node-ring {
@@ -46,6 +46,8 @@
   stroke: transparent;
   stroke-width: 3;
   opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .node-label {
@@ -55,11 +57,42 @@
   font-family: var(--font-mono);
 }
 
+.node-activity {
+  fill: var(--text);
+  font-size: 11px;
+  text-anchor: middle;
+  font-family: var(--font-mono);
+  animation: activity-in 0.4s var(--ease-standard);
+}
+
+@keyframes activity-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .node-active .node-circle { stroke: var(--blue); }
 .node-active .node-ring { stroke: var(--blue); opacity: 0.5; }
 
 .node-warning .node-circle { stroke: var(--amber); fill: color-mix(in srgb, var(--amber) 15%, var(--panel-bg)); }
-.node-warning .node-ring { stroke: var(--amber); opacity: 0.6; animation: ring-breathe 1.8s ease-in-out infinite; }
+.node-warning .node-ring {
+  stroke: var(--amber);
+  opacity: 0.55;
+  animation: ring-flash-amber 0.8s var(--ease-standard) forwards;
+}
+
+.node-injected .node-circle { stroke: var(--violet); fill: color-mix(in srgb, var(--violet) 16%, var(--panel-bg)); }
+.node-injected .node-ring {
+  stroke: var(--violet);
+  opacity: 0.6;
+  animation: ring-flash-violet 0.8s var(--ease-standard) forwards;
+}
+
+.node-wandering .node-circle { stroke: var(--orange); fill: color-mix(in srgb, var(--orange) 20%, var(--panel-bg)); }
+.node-wandering .node-ring {
+  stroke: var(--orange);
+  opacity: 0.65;
+  animation: ring-flash-orange 0.8s var(--ease-standard) forwards;
+}
 
 .node-critical .node-circle,
 .node-infected .node-circle {
@@ -69,19 +102,50 @@
 .node-critical .node-ring,
 .node-infected .node-ring {
   stroke: var(--red);
-  opacity: 0.7;
-  animation: ring-breathe 1.2s ease-in-out infinite;
+  opacity: 0.65;
+  animation: ring-flash-red 0.8s var(--ease-standard) forwards;
 }
 
 .node-frozen .node-circle {
   stroke: var(--cyan);
   fill: color-mix(in srgb, var(--cyan) 25%, var(--panel-bg));
 }
-.node-frozen .node-ring { stroke: var(--cyan); opacity: 0.8; }
+.node-frozen .node-ring {
+  stroke: var(--cyan);
+  opacity: 0.8;
+  animation: ring-flash-cyan 0.8s var(--ease-standard) forwards;
+}
 
-@keyframes ring-breathe {
-  0%, 100% { r: 34px; opacity: 0.3; }
-  50% { r: 40px; opacity: 0.7; }
+/* One-shot flash on status change, settling to a static ring — never a
+   looping idle animation. Each status gets its own keyframes so the resting
+   opacity matches its own final value. */
+@keyframes ring-flash-amber {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.55; }
+}
+@keyframes ring-flash-violet {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+@keyframes ring-flash-orange {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.65; }
+}
+@keyframes ring-flash-red {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.65; }
+}
+@keyframes ring-flash-cyan {
+  0% { transform: scale(1.35); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-pulsing,
+  .node-ring,
+  .node-activity {
+    animation: none !important;
+  }
 }
 
 .legend {
@@ -105,6 +169,8 @@
 }
 .dot.node-active { background: var(--blue); }
 .dot.node-warning { background: var(--amber); }
+.dot.node-injected { background: var(--violet); }
+.dot.node-wandering { background: var(--orange); }
 .dot.node-critical { background: var(--red); }
 .dot.node-infected { background: var(--red); }
 .dot.node-frozen { background: var(--cyan); }

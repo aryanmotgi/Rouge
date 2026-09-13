@@ -11,10 +11,16 @@ interface EdgePulse {
   nonce: number; // bumped on every re-trigger so CSS animation restarts
 }
 
+interface NodeActivity {
+  label: string; // the event's target — what the node is doing right now
+  nonce: number; // bumped on every event so the tag remounts and re-animates
+}
+
 interface EventStoreState {
   events: TripwireEvent[]; // newest first
   nodeStatus: Record<string, NodeStatus>;
   edgePulses: Record<string, EdgePulse>;
+  nodeActivity: Record<string, NodeActivity>;
   transportStatus: FeedStatus;
   ingestEvent: (event: TripwireEvent) => void;
   setTransportStatus: (status: FeedStatus) => void;
@@ -22,12 +28,14 @@ interface EventStoreState {
 }
 
 let pulseCounter = 0;
+let activityCounter = 0;
 const pulseTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export const useEventStore = create<EventStoreState>((set) => ({
   events: [],
   nodeStatus: {},
   edgePulses: {},
+  nodeActivity: {},
   transportStatus: 'idle',
 
   ingestEvent: (event) => {
@@ -45,10 +53,17 @@ export const useEventStore = create<EventStoreState>((set) => ({
         edgePulses[effect.edgeId] = { edgeId: effect.edgeId, status: effect.status, nonce: pulseCounter };
       }
 
+      activityCounter += 1;
+      const nodeActivity = {
+        ...state.nodeActivity,
+        [event.actor]: { label: event.target, nonce: activityCounter },
+      };
+
       return {
         events: [event, ...state.events],
         nodeStatus,
         edgePulses,
+        nodeActivity,
       };
     });
 
@@ -73,7 +88,7 @@ export const useEventStore = create<EventStoreState>((set) => ({
   reset: () => {
     pulseTimers.forEach(clearTimeout);
     pulseTimers.clear();
-    set({ events: [], nodeStatus: {}, edgePulses: {} });
+    set({ events: [], nodeStatus: {}, edgePulses: {}, nodeActivity: {} });
   },
 }));
 
