@@ -41,6 +41,12 @@ export function TaskActivation({
     setDraft('');
   };
 
+  const transportBadge = (
+    <span className={`transport-status status-${transportStatus}`}>
+      {controllable ? 'mock feed' : 'live feed'} · {transportStatus}
+    </span>
+  );
+
   if (phase === 'active') {
     return (
       <div className="task-activation task-activation-running">
@@ -56,9 +62,7 @@ export function TaskActivation({
           <button className="new-task-btn" onClick={onNewTask}>
             New task
           </button>
-          <span className={`transport-status status-${transportStatus}`}>
-            {controllable ? 'mock feed' : 'live feed'} · {transportStatus}
-          </span>
+          {transportBadge}
         </div>
       </div>
     );
@@ -79,6 +83,7 @@ export function TaskActivation({
       <button className="activate-btn" onClick={submit} disabled={!draft.trim()}>
         Activate
       </button>
+      {transportBadge}
     </div>
   );
 }

@@ -81,7 +81,10 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="app-title">
-          <span className="app-title-main">Tripwire Cascade</span>
+          <span className="app-title-main">
+            <span className={`brand-dot ${phase === 'active' ? 'brand-dot-live' : ''}`} />
+            Tripwire Cascade
+          </span>
           <span className="app-title-sub">live containment dashboard</span>
         </div>
         <SandboxCounter active={phase === 'active'} />

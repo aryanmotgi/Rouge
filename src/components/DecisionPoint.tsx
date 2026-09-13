@@ -9,7 +9,7 @@ interface DecisionPointProps {
 // its own from here — one of these two choices is what resumes it.
 export function DecisionPoint({ onFreeze, onObserve }: DecisionPointProps) {
   return (
-    <div className="decision-point">
+    <div className="decision-point" role="alert">
       <div className="decision-point-message">
         <span className="decision-point-label">Breach confirmed — run paused</span>
         <span className="decision-point-detail">
@@ -18,10 +18,10 @@ export function DecisionPoint({ onFreeze, onObserve }: DecisionPointProps) {
       </div>
       <div className="decision-point-actions">
         <button className="decision-btn decision-btn-freeze" onClick={onFreeze}>
-          Freeze now
+          <span className="decision-btn-top">Freeze now</span>
         </button>
         <button className="decision-btn decision-btn-observe" onClick={onObserve}>
-          Observe in decoy
+          <span className="decision-btn-top">Observe in decoy</span>
         </button>
       </div>
     </div>

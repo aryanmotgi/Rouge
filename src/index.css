@@ -1,18 +1,30 @@
 :root {
-  --bg: #0b0e14;
-  --panel-bg: #10141d;
-  --panel-bg-raised: #131826;
-  --border: #232a3a;
-  --text: #e6e9f0;
-  --text-dim: #8891a5;
-  --line-idle: #2c3346;
-  --blue: #4f9dff;
-  --amber: #f5a623;
-  --red: #ff4d5e;
-  --green: #34c77b;
-  --cyan: #35d6c8;
-  --violet: #a78bfa;
-  --orange: #ff8a3d;
+  /* Canvas: a richer, cooler near-black with a whisper of indigo, instead of
+     flat navy — gives the surface some depth before anything is drawn on it. */
+  --bg: #090a13;
+  --panel-bg: #10111e;
+  --panel-bg-raised: #151728;
+  --panel-bg-raised-top: #191c31;
+  --border: #262a42;
+  --text: #eef0f9;
+  --text-dim: #9098b5;
+  --line-idle: #313657;
+
+  /* Signature accent — the one hue that owns brand/interactive chrome
+     (header, focus, primary actions). Distinct from the semantic risk
+     colors below, which keep their existing meanings. */
+  --brand: #5b7dff;
+
+  /* Semantic risk ladder — same roles as before, retuned for more life:
+     higher chroma, less muddy, still legible at small sizes. */
+  --blue: #5b7dff;
+  --amber: #ffb545;
+  --red: #ff4d6d;
+  --green: #2ee6a8;
+  --cyan: #22e0d4;
+  --violet: #b389ff;
+  --orange: #ff9142;
+
   --font-mono: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
   --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -29,11 +41,65 @@ html, body, #root {
   margin: 0;
 }
 
+/* Ambient backdrop: a fine dot grid (adapted from a uiverse.io pattern,
+   kennyotsu, MIT — a blueprint/schematic texture fitting a containment
+   dashboard) plus two soft glows — brand blue and a whisper of violet —
+   that drift very slowly across the page. Only visible in the negative
+   space between panels — it never competes with panel content, and the
+   drift is slow and low-contrast enough to read as ambient rather than
+   decorative noise. */
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1.5px),
+    radial-gradient(circle, color-mix(in srgb, var(--brand) 24%, transparent), transparent 60%),
+    radial-gradient(circle, color-mix(in srgb, var(--violet) 14%, transparent), transparent 55%);
+  background-size: 28px 28px, 62vmax 62vmax, 50vmax 50vmax;
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-position: 0 0, 12% 18%, 90% 85%;
   color: var(--text);
+  animation: ambient-drift 30s ease-in-out infinite;
+}
+
+@keyframes ambient-drift {
+  0%, 100% { background-position: 0 0, 12% 18%, 90% 85%; }
+  50% { background-position: 0 0, 78% 62%, 15% 30%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { animation: none; }
 }
 
 button {
   font-family: inherit;
 }
+
+/* Browser surfaces — themed from the palette rather than left as defaults. */
+::selection {
+  background: color-mix(in srgb, var(--brand) 55%, transparent);
+  color: var(--text);
+}
+
+html {
+  caret-color: var(--brand);
+  scrollbar-color: var(--line-idle) transparent;
+  scrollbar-width: thin;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--line-idle);
+  border-radius: 999px;
+  border: 2px solid var(--panel-bg-raised);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--border); }

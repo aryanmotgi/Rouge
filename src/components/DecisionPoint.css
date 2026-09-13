@@ -42,30 +42,44 @@
 
 .decision-point-actions {
   display: flex;
-  gap: 10px;
+  gap: 14px;
 }
 
+/* 3D "press" button — adapted from a uiverse.io element (Voxybuns, MIT): a
+   solid base layer with a raised face that lifts on hover and presses flat
+   on click, rather than a flat button with just a color change. */
 .decision-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--decision-btn-base);
+}
+
+.decision-btn-top {
+  display: block;
+  border-radius: 8px;
+  padding: 9px 18px;
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
-  padding: 9px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 1px solid var(--border);
-  transition: transform 0.2s var(--ease-standard), opacity 0.2s var(--ease-standard), background 0.2s var(--ease-standard);
+  background: var(--decision-btn-face);
+  color: var(--decision-btn-text);
+  transform: translateY(-3px);
+  transition: transform 0.15s var(--ease-standard);
 }
-.decision-btn:hover { transform: translateY(-1px); }
+
+.decision-btn:hover .decision-btn-top { transform: translateY(-4px); }
+.decision-btn:active .decision-btn-top { transform: translateY(0); }
 
 .decision-btn-freeze {
-  background: var(--cyan);
-  border-color: var(--cyan);
-  color: #04211f;
+  --decision-btn-base: color-mix(in srgb, var(--cyan) 45%, black);
+  --decision-btn-face: var(--cyan);
+  --decision-btn-text: #04211f;
 }
 
 .decision-btn-observe {
-  background: transparent;
-  border-color: var(--red);
-  color: var(--red);
+  --decision-btn-base: color-mix(in srgb, var(--red) 45%, black);
+  --decision-btn-face: var(--red);
+  --decision-btn-text: #2a0508;
 }
-.decision-btn-observe:hover { background: color-mix(in srgb, var(--red) 15%, transparent); }

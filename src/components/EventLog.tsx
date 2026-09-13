@@ -24,7 +24,11 @@ export function EventLog({ recording }: EventLogProps) {
         )}
       </div>
       <div className="event-log-scroll">
-        {events.length === 0 && <p className="event-log-empty">Waiting for events…</p>}
+        {events.length === 0 && (
+          <p className="event-log-empty">
+            {recording ? 'Waiting for events…' : 'No run active — activate a task to begin.'}
+          </p>
+        )}
         {events.map((event) => (
           // Keyed on the event's own identity (not array index) so existing
           // rows never remount as new ones are unshifted in — only a
