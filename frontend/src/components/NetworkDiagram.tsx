@@ -20,11 +20,21 @@ export function NetworkDiagram() {
   const edgePulses = useEventStore((s) => s.edgePulses);
   const nodeActivity = useEventStore((s) => s.nodeActivity);
 
+  // cascade agents form the idle roster (always shown); email_agent / decoy /
+  // tenki_db "spawn" the first time an event touches them — that's the fade-in
+  // + connect animation as the run unfolds.
+  const isPresent = (id: string, kind: string) =>
+    kind === 'cascade' || nodeStatus[id] !== undefined;
+  const presentById = (id: string) => {
+    const n = NODE_LAYOUT.find((node) => node.id === id);
+    return n ? isPresent(n.id, n.kind) : false;
+  };
+
   return (
     <div className="network-diagram">
       <h2 className="panel-title">Network</h2>
       <svg viewBox="0 0 1000 620" className="network-svg" role="img" aria-label="Agent network diagram">
-        {EDGE_LAYOUT.map((edge) => {
+        {EDGE_LAYOUT.filter((e) => presentById(e.from) && presentById(e.to)).map((edge) => {
           const from = nodeCenter(edge.from);
           const to = nodeCenter(edge.to);
           const pulse = edgePulses[edge.id];
@@ -39,18 +49,18 @@ export function NetworkDiagram() {
               y1={from.y}
               x2={to.x}
               y2={to.y}
-              className={`edge edge-${status} ${edge.variant === 'dashed' ? 'edge-dashed' : ''} ${
-                pulse ? 'edge-pulsing' : ''
-              }`}
+              className={`edge edge-appear edge-${status} ${
+                edge.variant === 'dashed' ? 'edge-dashed' : ''
+              } ${pulse ? 'edge-pulsing' : ''}`}
             />
           );
         })}
 
-        {NODE_LAYOUT.map((node) => {
+        {NODE_LAYOUT.filter((node) => isPresent(node.id, node.kind)).map((node) => {
           const status: NodeStatus = nodeStatus[node.id] ?? 'idle';
           const activity = nodeActivity[node.id];
           return (
-            <g key={node.id} className={`node node-${status}`} transform={`translate(${node.x},${node.y})`}>
+            <g key={node.id} className={`node node-spawn node-${status}`} transform={`translate(${node.x},${node.y})`}>
               <circle r={NODE_RADIUS[node.kind]} className="node-circle" />
               <circle r={NODE_RADIUS[node.kind]} className="node-ring" />
               <text className="node-label" y={NODE_RADIUS[node.kind] + 16}>

@@ -174,3 +174,10 @@
 .dot.node-critical { background: var(--red); }
 .dot.node-infected { background: var(--red); }
 .dot.node-frozen { background: var(--cyan); }
+
+/* spawn / connect animations — nodes fade in as events touch them, edges fade
+   in as their endpoints appear. Opacity-only so the SVG translate attr is safe. */
+.node-spawn { animation: node-spawn 0.5s ease both; }
+@keyframes node-spawn { from { opacity: 0; } to { opacity: 1; } }
+.edge-appear { animation: edge-appear 0.6s ease both; }
+@keyframes edge-appear { from { opacity: 0; } to { opacity: 1; } }
