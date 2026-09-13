@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createFeedSource } from './feed/createFeedSource';
-import type { DecisionChoice, FeedSource, ScenarioId } from './feed/FeedSource';
+import type { DecisionChoice, FeedSource } from './feed/FeedSource';
 import { useEventStore } from './state/eventStore';
 import { NetworkDiagram } from './components/NetworkDiagram';
 import { EventLog } from './components/EventLog';
@@ -9,13 +9,19 @@ import { SandboxCounter } from './components/SandboxCounter';
 import { ModeToggle } from './components/ModeToggle';
 import { TaskActivation } from './components/TaskActivation';
 import { DecisionPoint } from './components/DecisionPoint';
+import { feedConfig } from './feed/config';
 import './App.css';
 
 type Phase = 'idle' | 'active';
+// three real backend scenarios the command box can kick off
+export type RunMode = 'clean' | 'uncontained' | 'protected';
+
+// derive the HTTP pipeline base from the WS events URL (ws://host/stream -> http://host)
+const RUN_BASE = feedConfig.eventsUrl.replace(/^ws/, 'http').replace(/\/stream\/?$/, '');
 
 function App() {
   const feedRef = useRef<FeedSource | null>(null);
-  const [mode, setMode] = useState<ScenarioId>('clean');
+  const [mode, setMode] = useState<RunMode>('uncontained');
   const [phase, setPhase] = useState<Phase>('idle');
   const [task, setTask] = useState('');
   const [decisionPending, setDecisionPending] = useState(false);
@@ -41,7 +47,7 @@ function App() {
 
   const controllable = feedRef.current?.capabilities.controllable ?? true;
 
-  const handleSelectMode = (next: ScenarioId) => {
+  const handleSelectMode = (next: RunMode) => {
     if (phase === 'active') return; // mode locks once a run is underway
     setMode(next);
   };
@@ -52,7 +58,12 @@ function App() {
     setDecisionPending(false);
     setDecision(null);
     reset();
-    feedRef.current?.loadScenario?.(mode);
+    // kick off the REAL agent run in the backend; events stream back over WS
+    fetch(`${RUN_BASE}/run`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ scenario: mode }),
+    }).catch((err) => console.error('run trigger failed', err));
   };
 
   const handleRestart = () => {

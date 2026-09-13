@@ -54,9 +54,12 @@ export const useEventStore = create<EventStoreState>((set) => ({
       }
 
       activityCounter += 1;
+      // show the agent's real thought (reasoning detail) under its node; fall
+      // back to the target when there's no detail. Truncated to fit the label.
+      const thought = (event.detail || event.target || '').slice(0, 46);
       const nodeActivity = {
         ...state.nodeActivity,
-        [event.actor]: { label: event.target, nonce: activityCounter },
+        [event.actor]: { label: thought, nonce: activityCounter },
       };
 
       return {

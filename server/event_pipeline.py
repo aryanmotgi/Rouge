@@ -41,6 +41,10 @@ app.add_middleware(
 from trap import router as trap_router  # noqa: E402
 app.include_router(trap_router)
 
+# mount /run — lets the dashboard command box kick off a real agent run
+from runner import router as runner_router  # noqa: E402
+app.include_router(runner_router)
+
 
 class Event(BaseModel):
     """Canonical event shape shared by ALL components."""
