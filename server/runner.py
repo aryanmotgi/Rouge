@@ -56,6 +56,7 @@ async def _do_run(scenario: str, backend: str, n: int) -> None:
     protect, injection = SCENARIOS[scenario]
     trap.state["protect"] = protect
     trap.state["backend"] = backend
+    trap.state["scenario"] = scenario
     trap.state.update(frozen=False, sandbox_id=None, breached=False)
     env = {**os.environ, "ROUGE_INJECTION": injection}
     try:
@@ -76,6 +77,9 @@ async def run(body: Run) -> dict:
     if _state["running"]:
         return {"ok": False, "error": "a run is already in progress"}
     _state["running"] = True
+    # set scenario up front so clean-run decoy isolation is active immediately —
+    # before any stray external decoy hit can land between reset and spawn.
+    trap.state["scenario"] = body.scenario
     # clean slate for the new run
     hub.history.clear()
     await publish({"actor": "system", "action": "reset", "detail": "run cleared"})

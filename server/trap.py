@@ -48,6 +48,10 @@ state = {
     "frozen": False,
     "sandbox_id": None,
     "breached": False,
+    # current run scenario (set by runner). "clean" has injection off, so the
+    # agent never touches the decoy — any decoy_triggered during a clean run is
+    # a stray external hit on the shared decoy and must be dropped, not shown.
+    "scenario": None,
 }
 
 # single source of truth for the fake customer data (used by BOTH backends)
