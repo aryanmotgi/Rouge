@@ -39,9 +39,36 @@ Decoy website (Shreyash / Wasmer): `http://127.0.0.1:8791/accounts`
 | GET  | `/`       | live dashboard |
 | POST | `/db/login` | **the honeypot** — planted cred → spins Tenki (uncontained) or freezes (protected) |
 | POST | `/db/query` | rogue query runs for real inside the Tenki VM (logged) |
-| GET  | `/trap/state` | `{frozen, protect, breached, sandbox_id}` — agents check before sensitive actions |
-| POST | `/trap/mode` | `{protect: true|false}` — flip demo mode live |
+| GET  | `/trap/state` | `{frozen, protect, backend, breached, sandbox_id}` — agents check before sensitive actions |
+| POST | `/trap/mode` | `{protect: true|false}` — flip protected/uncontained live |
+| POST | `/trap/backend` | `{backend: "tenki"|"mock"}` — real microVM vs instant mock, identical events |
 | POST | `/trap/reset` | terminate Tenki VM + clear freeze |
+
+## Stage control (one command to a known state)
+```bash
+./.venv/bin/python scripts/stage.py status              # what's live right now
+./.venv/bin/python scripts/stage.py prep uncontained    # attack succeeds
+./.venv/bin/python scripts/stage.py prep protected      # trap freezes it
+./.venv/bin/python scripts/stage.py prep clean          # control, no injection
+./.venv/bin/python scripts/stage.py backend mock        # flip to mock if venue WiFi is bad
+./.venv/bin/python scripts/stage.py backend tenki       # flip to real Tenki VM
+```
+
+## Decoy policy (real vs fallback)
+Demo uses **Shreyash's real Wasmer decoy** (`DECOY_PRIMARY_URL` in `.env`) — this
+is what scores the Wasmer track. `server/decoy_stub.py` is a **clearly-labeled local
+fallback** that only activates if his decoy is unreachable; every stub event is tagged
+`[LOCAL FALLBACK STUB]` so you never demo it by accident. The stage script auto-picks
+the real one when reachable and prints LOUD which is active. Paste his URL into
+`DECOY_PRIMARY_URL` once he shares it.
+
+## Servers to run
+```bash
+# main pipeline + trap (bind 0.0.0.0 so teammates can reach it on build day)
+./.venv/bin/uvicorn server.event_pipeline:app --host 0.0.0.0 --port 8787
+# local fallback decoy (only needed as your safety net)
+./.venv/bin/uvicorn server.decoy_stub:app --host 0.0.0.0 --port 8791
+```
 
 ## Demo modes
 - **Uncontained:** `protect=false` → planted login spins a real Tenki microVM with

@@ -13,24 +13,31 @@ database — restart = clean slate, which is exactly what we want between runs.
 """
 from __future__ import annotations
 
-import asyncio
-import collections
+import sys as _sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-MAX_EVENTS = 5000
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from bus import hub, publish  # noqa: E402
+
 DASHBOARD = Path(__file__).resolve().parent.parent / "dashboard" / "index.html"
 
 app = FastAPI(title="Rouge Event Pipeline")
 
+# open CORS — hackathon build day: teammates' agent/decoy/dashboard hit this
+# from other laptops + browsers. Wide-open is fine for a demo, never prod.
+app.add_middleware(
+    CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
+    allow_headers=["*"], allow_credentials=False,
+)
+
 # mount Aryan's Tenki trap + freeze routes on the same server
-import sys as _sys  # noqa: E402
-_sys.path.insert(0, str(Path(__file__).resolve().parent))
 from trap import router as trap_router  # noqa: E402
 app.include_router(trap_router)
 
@@ -46,38 +53,10 @@ class Event(BaseModel):
     extra: dict[str, Any] = Field(default_factory=dict)  # escape hatch (positions, ids)
 
 
-class _Hub:
-    """Holds history + the set of connected websocket clients."""
-    def __init__(self) -> None:
-        self.history: collections.deque[dict] = collections.deque(maxlen=MAX_EVENTS)
-        self.clients: set[WebSocket] = set()
-        self.lock = asyncio.Lock()
-
-    async def publish(self, event: dict) -> None:
-        self.history.append(event)
-        dead: list[WebSocket] = []
-        for ws in list(self.clients):
-            try:
-                await ws.send_json(event)
-            except Exception:
-                dead.append(ws)
-        for ws in dead:
-            self.clients.discard(ws)
-
-    async def reset(self) -> None:
-        self.history.clear()
-
-
-hub = _Hub()
-
-
 @app.post("/events")
 async def post_event(event: Event) -> dict:
-    payload = event.model_dump()
-    if not payload["time"]:
-        payload["time"] = datetime.now(timezone.utc).isoformat()
-    async with hub.lock:
-        await hub.publish(payload)
+    # external components (agents, decoy) POST here; in-process code calls publish()
+    await publish(event.model_dump())
     return {"ok": True, "stored": len(hub.history)}
 
 
@@ -88,12 +67,8 @@ async def get_events() -> JSONResponse:
 
 @app.post("/reset")
 async def reset() -> dict:
-    async with hub.lock:
-        await hub.reset()
-        # tell live clients to wipe their view
-        await hub.publish({"actor": "system", "action": "reset",
-                           "target": "", "detail": "run cleared", "flagged": False,
-                           "time": datetime.now(timezone.utc).isoformat(), "extra": {}})
+    hub.history.clear()
+    await publish({"actor": "system", "action": "reset", "detail": "run cleared"})
     return {"ok": True}
 
 
