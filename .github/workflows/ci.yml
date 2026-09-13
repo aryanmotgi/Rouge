@@ -29,6 +29,16 @@ jobs:
 
       - name: Boot pipeline and hit /health
         run: |
-          uvicorn server.event_pipeline:app --host 127.0.0.1 --port 8787 &
-          sleep 5
-          curl -sf http://127.0.0.1:8787/health
+          # start server, capture PID, and always kill it on step exit
+          uvicorn server.event_pipeline:app --host 127.0.0.1 --port 8787 \
+            > /tmp/uvicorn.log 2>&1 &
+          echo $! > /tmp/uvicorn.pid
+          trap 'kill "$(cat /tmp/uvicorn.pid)" 2>/dev/null' EXIT
+          # poll up to ~30s instead of a fixed sleep (slow runners bind late)
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8787/health; then
+              echo "health OK after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "health check failed; server log:"; cat /tmp/uvicorn.log; exit 1
