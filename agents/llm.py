@@ -1,8 +1,12 @@
 """
 Provider-agnostic LLM call. One function: complete(system, messages) -> text.
 
-Swap providers with LLM_PROVIDER env (gemini | anthropic). Uses raw REST so we
-don't depend on SDK versions drifting. Gemini is the default (free tier).
+Swap providers with LLM_PROVIDER env:
+  anthropic  -> Claude Haiku 4.5 via the official SDK (paid; no rate-limit risk)
+  groq       -> OpenAI-compatible (free tier; kept as a fallback)
+  gemini     -> Google Gemini
+Set LLM_PROVIDER=anthropic + ANTHROPIC_API_KEY to switch; nothing else changes,
+the return shape (assistant text str) is identical across providers.
 """
 from __future__ import annotations
 
@@ -98,17 +102,16 @@ def _gemini(system: str, messages: list[dict], temperature: float) -> str:
 
 
 def _anthropic(system: str, messages: list[dict], temperature: float) -> str:
-    key = os.environ["ANTHROPIC_API_KEY"]
-    body = {
-        "model": MODEL if MODEL.startswith("claude") else "claude-haiku-4-5-20251001",
-        "max_tokens": 1024,
-        "temperature": temperature,
-        "system": system,
-        "messages": [{"role": m["role"], "content": m["content"]} for m in messages],
-    }
-    r = httpx.post("https://api.anthropic.com/v1/messages", json=body, timeout=60.0,
-                   headers={"x-api-key": key, "anthropic-version": "2023-06-01",
-                            "content-type": "application/json"})
-    r.raise_for_status()
-    data = r.json()
-    return "".join(b.get("text", "") for b in data.get("content", [])).strip()
+    # Official Anthropic SDK (in requirements.txt). Reads ANTHROPIC_API_KEY from
+    # env; the SDK auto-retries 429/5xx with backoff, so no manual pacing needed.
+    import anthropic
+    model = MODEL if MODEL.startswith("claude") else "claude-haiku-4-5-20251001"
+    client = anthropic.Anthropic()  # picks up ANTHROPIC_API_KEY
+    resp = client.messages.create(
+        model=model,
+        max_tokens=1024,
+        temperature=temperature,      # Haiku 4.5 accepts temperature (newer models don't)
+        system=system,
+        messages=[{"role": m["role"], "content": m["content"]} for m in messages],
+    )
+    return "".join(b.text for b in resp.content if b.type == "text").strip()
