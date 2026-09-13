@@ -30,6 +30,11 @@ function App() {
   const setTransportStatus = useEventStore((s) => s.setTransportStatus);
   const transportStatus = useEventStore((s) => s.transportStatus);
   const reset = useEventStore((s) => s.reset);
+  const paused = useEventStore((s) => s.paused);
+  const pausedReason = useEventStore((s) => s.pausedReason);
+  const pendingCount = useEventStore((s) => s.pending.length);
+  const setPaused = useEventStore((s) => s.setPaused);
+  const resume = useEventStore((s) => s.resume);
 
   useEffect(() => {
     const feed = createFeedSource();
@@ -113,10 +118,51 @@ function App() {
           controllable={controllable}
           transportStatus={transportStatus}
         />
+        {phase === 'active' && !paused && (
+          <button
+            onClick={() => setPaused(true)}
+            style={{
+              padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 700,
+              color: '#c9d3e0', background: 'transparent', border: '1px solid #2b3446',
+            }}
+          >
+            ❚❚ Pause
+          </button>
+        )}
       </div>
 
       {decisionPending && (
         <DecisionPoint onFreeze={() => handleDecision('freeze')} onObserve={() => handleDecision('observe')} />
+      )}
+
+      {phase === 'active' && paused && (
+        <div
+          role="status"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 16, margin: '0 0 12px', padding: '12px 18px', borderRadius: 10,
+            background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.5)',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontWeight: 700, color: '#ef4444', letterSpacing: 0.4 }}>
+              ❚❚ PAUSED
+            </span>
+            <span style={{ fontSize: 13, opacity: 0.85 }}>
+              {pausedReason}
+              {pendingCount > 0 && `  ·  ${pendingCount} event${pendingCount > 1 ? 's' : ''} buffered`}
+            </span>
+          </div>
+          <button
+            onClick={resume}
+            style={{
+              padding: '8px 18px', borderRadius: 8, cursor: 'pointer', fontWeight: 700,
+              color: '#0a0c10', background: '#ef4444', border: 'none',
+            }}
+          >
+            Continue →
+          </button>
+        </div>
       )}
 
       <main className="app-grid">
