@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <meta charset="utf-8">
 <title>Rouge — Tripwire Cascade</title>
 <style>
@@ -16,10 +17,12 @@
   #status.live { color:var(--green); }
   .wrap { display:grid; grid-template-columns:1fr 420px; height:calc(100vh - 45px); }
   .graph { position:relative; min-height:0; overflow:hidden; }
-  /* absolute-fill the panel: an svg with height:100% inside a grid cell can
-     collapse to 0 height (grid track height doesn't resolve as a % base),
-     which leaves the diagram blank while the feed renders fine. */
-  svg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  /* The svg MUST carry intrinsic width/height attributes (on the tag) to
+     establish a content viewport in this grid layout. CSS width/height:100%
+     (or max-height:100%) leaves the box sized but paints NO geometry — the
+     diagram goes blank while the feed renders fine. So size via attributes and
+     only center here; never put a % height on the svg. */
+  svg { display:block; margin:0 auto; }
   .node circle { transition:fill .25s, stroke .25s, r .15s; }
   .node text { fill:var(--dim); font-size:11px; text-anchor:middle; }
   .feed { border-left:1px solid var(--line); display:flex; flex-direction:column; }
@@ -52,7 +55,7 @@
 
 <div class="wrap">
   <div class="graph">
-    <svg id="svg" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid meet"></svg>
+    <svg id="svg" width="900" height="700" viewBox="0 0 900 700" preserveAspectRatio="xMidYMid meet"></svg>
   </div>
   <div class="feed">
     <div class="summary">
