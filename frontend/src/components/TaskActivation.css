@@ -1,0 +1,137 @@
+.task-activation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.task-input {
+  flex: 1;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text);
+  transition: border-color 0.25s var(--ease-standard);
+}
+.task-input:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+.task-input::placeholder { color: var(--text-dim); }
+
+.activate-btn {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--brand);
+  background: var(--brand);
+  color: #06081a;
+  cursor: pointer;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 0%, transparent);
+  transition: transform 0.2s var(--ease-standard), opacity 0.2s var(--ease-standard), box-shadow 0.2s var(--ease-standard);
+}
+.activate-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--brand) 65%, transparent);
+}
+.activate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* The one authored focal moment: the activation itself. Nothing else in
+   this dashboard gets an entrance like this — it's reserved for the single
+   most meaningful state change (idle -> a run underway). */
+.task-activation-running {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 1;
+  flex-wrap: wrap;
+  animation: activation-in 0.6s var(--ease-standard);
+}
+
+@keyframes activation-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-activation-running { animation: none; }
+}
+
+.task-running-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.task-running-label .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+
+.task-text {
+  font-size: 14px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46ch;
+}
+
+.task-activation-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.decision-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.restart-btn,
+.new-task-btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.2s var(--ease-standard), border-color 0.2s var(--ease-standard);
+}
+.restart-btn:hover:not(:disabled),
+.new-task-btn:hover { color: var(--text); border-color: var(--text-dim); }
+.restart-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.transport-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.status-connected { color: var(--green); }
+.status-error { color: var(--red); }
+.status-connecting { color: var(--amber); }

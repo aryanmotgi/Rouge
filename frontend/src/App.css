@@ -1,0 +1,131 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 16px 20px;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.app-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-title-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* A live status dot: dim while idle, brand-colored and pulsing once a run
+   is active — this is state feedback (is the dashboard doing anything right
+   now?), not decoration, so it's the one place a continuous pulse earns its
+   keep. */
+.brand-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--line-idle);
+  flex-shrink: 0;
+  transition: background 0.3s var(--ease-standard);
+}
+
+.brand-dot-live {
+  background: var(--brand);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 60%, transparent);
+  animation: brand-dot-pulse 2s var(--ease-standard) infinite;
+}
+
+@keyframes brand-dot-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 45%, transparent); }
+  70% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--brand) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 0%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-dot-live { animation: none; }
+}
+
+.app-title-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.app-toolbar {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, var(--panel-bg-raised-top), var(--panel-bg));
+  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset, 0 8px 20px -12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.app-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, var(--panel-bg-raised-top), var(--panel-bg-raised));
+  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset, 0 12px 28px -16px rgba(0, 0, 0, 0.55);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-network {
+  grid-row: 1 / 3;
+  grid-column: 1;
+}
+
+.panel-summary {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.panel-log {
+  grid-row: 2;
+  grid-column: 2;
+}
+
+.panel-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+
+@media (max-width: 900px) {
+  .app-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  .panel-network { grid-row: 1; grid-column: 1; min-height: 340px; }
+  .panel-summary { grid-row: 2; grid-column: 1; }
+  .panel-log { grid-row: 3; grid-column: 1; min-height: 260px; }
+}
