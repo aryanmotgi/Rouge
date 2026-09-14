@@ -75,13 +75,22 @@ export function deriveEffects(event: TripwireEvent): DerivedEffects {
       nodeEffects.push({ nodeId: emailAgent, status: 'wandering' });
       break;
 
-    case A.visitedUrl:
+    case A.visitedUrl: {
       nodeEffects.push({ nodeId: emailAgent, status: 'warning' });
-      if (event.target === decoySite) {
+      // The agent visiting the decoy portal should light the decoy node even if
+      // the real (Wasmer) decoy is unreachable and never posts decoy_triggered —
+      // the visit itself is the connection. A flagged visited_url IS the decoy hit.
+      const toDecoy =
+        event.target === decoySite ||
+        event.flagged ||
+        Boolean(event.extra?.decoy_url) ||
+        /8791|\/accounts|billing/i.test(event.target);
+      if (toDecoy) {
         nodeEffects.push({ nodeId: decoySite, status: 'active' });
         edgeEffects.push({ edgeId: edgeId(emailAgent, decoySite), status: 'warning' });
       }
       break;
+    }
 
     case A.decoyTriggered:
       nodeEffects.push({ nodeId: decoySite, status: 'warning' });

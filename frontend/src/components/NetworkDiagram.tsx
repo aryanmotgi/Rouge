@@ -59,9 +59,29 @@ export function NetworkDiagram({ prerun = false }: { prerun?: boolean }) {
   const focusId = focusRef.current;
 
   const c = nodeCenter(focusId);
-  const zoom = wideShot ? 1 : FOLLOW_ZOOM;
-  const tx = wideShot ? 0 : CENTER_X - zoom * c.x;
-  const ty = wideShot ? 0 : CENTER_Y - zoom * c.y;
+  // pre-run: centre the camera on the roster column (email/decoy are hidden,
+  // so a full-board shot leaves the agents stranded on the right). Otherwise:
+  // wide shot = whole board; follow = zoom onto the active node.
+  let zoom: number;
+  let tx: number;
+  let ty: number;
+  if (prerun) {
+    const roster = NODE_LAYOUT.filter((n) => n.kind === 'cascade');
+    const rx = roster[0]?.x ?? CENTER_X;
+    const ys = roster.map((n) => n.y);
+    const ry = (Math.min(...ys) + Math.max(...ys)) / 2;
+    zoom = 1; // centre the column without scaling, so all 6 agents fit vertically
+    tx = CENTER_X - zoom * rx;
+    ty = CENTER_Y - zoom * ry;
+  } else if (wideShot) {
+    zoom = 1;
+    tx = 0;
+    ty = 0;
+  } else {
+    zoom = FOLLOW_ZOOM;
+    tx = CENTER_X - zoom * c.x;
+    ty = CENTER_Y - zoom * c.y;
+  }
   const camStyle: React.CSSProperties = {
     transform: `translate(${tx}px, ${ty}px) scale(${zoom})`,
     transition: 'transform var(--t-slow, 0.8s) var(--ease-standard)',
