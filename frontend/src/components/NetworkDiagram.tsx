@@ -124,14 +124,26 @@ export function NetworkDiagram({ prerun = false }: { prerun?: boolean }) {
                   className={`node node-spawn node-${status} ${focused ? 'node-focused' : ''}`}
                   transform={`translate(${node.x},${node.y})`}
                 >
+                  {prerun && node.kind === 'cascade' && (
+                    <g className="sandbox-frame">
+                      <rect x={-62} y={-42} width={124} height={76} rx={11} />
+                      <text className="sandbox-tag" x={-54} y={-29}>⬡ wasmer sandbox</text>
+                      <text className="sandbox-status" x={0} y={30}>running · thinking</text>
+                    </g>
+                  )}
                   <circle r={NODE_RADIUS[node.kind]} className="node-circle" />
                   <circle r={NODE_RADIUS[node.kind]} className="node-ring" />
-                  <text className="node-label" y={NODE_RADIUS[node.kind] + 16}>
+                  <text
+                    className="node-label"
+                    y={NODE_RADIUS[node.kind] + (prerun && node.kind === 'cascade' ? 26 : 16)}
+                  >
                     {node.label}
                   </text>
                   {(() => {
                     const thought = activity?.label;
-                    const idleAgent = node.kind === 'cascade';
+                    // in pre-run the sandbox box shows the status, so no floating
+                    // bubble; during a run untouched agents still show one.
+                    const idleAgent = node.kind === 'cascade' && !prerun;
                     if (!thought && !idleAgent) return null;
                     return (
                       <foreignObject
@@ -149,10 +161,8 @@ export function NetworkDiagram({ prerun = false }: { prerun?: boolean }) {
                             {thought}
                           </div>
                         ) : (
-                          // idle roster agent: honest role + its Wasmer sandbox
-                          <div className="thought-bubble bubble-idle bubble-idle-roster">
-                            <span className="bubble-sandbox">⬡ wasmer sandbox</span>
-                            idle · watching shared log
+                          <div className="thought-bubble bubble-idle">
+                            running · thinking
                           </div>
                         )}
                       </foreignObject>
