@@ -9,7 +9,7 @@ import { SandboxCounter } from './components/SandboxCounter';
 import { ModeToggle } from './components/ModeToggle';
 import { TaskActivation } from './components/TaskActivation';
 import { DecisionPoint } from './components/DecisionPoint';
-import { ChatScreen } from './components/ChatScreen';
+import { CommandBar } from './components/CommandBar';
 import { feedConfig } from './feed/config';
 import './App.css';
 
@@ -24,7 +24,6 @@ function App() {
   const feedRef = useRef<FeedSource | null>(null);
   const [mode, setMode] = useState<RunMode>('uncontained');
   const [phase, setPhase] = useState<Phase>('idle');
-  const [view, setView] = useState<'chat' | 'network'>('chat');
   const [task, setTask] = useState('');
   const [decisionPending, setDecisionPending] = useState(false);
   const [decision, setDecision] = useState<DecisionChoice | null>(null);
@@ -62,7 +61,6 @@ function App() {
   const handleActivate = (taskText: string) => {
     setTask(taskText);
     setPhase('active');
-    setView('network');
     setDecisionPending(false);
     setDecision(null);
     reset();
@@ -85,7 +83,6 @@ function App() {
     feedRef.current?.stop?.();
     reset();
     setPhase('idle');
-    setView('chat');
     setTask('');
     setDecisionPending(false);
     setDecision(null);
@@ -97,14 +94,33 @@ function App() {
     feedRef.current?.resolveDecision?.(choice);
   };
 
-  if (view === 'chat') {
+  if (phase === 'idle') {
+    // pre-run: the idle agent roster sits in their sandboxes above a command
+    // strip. Dispatching a task dives the camera onto the email agent.
     return (
-      <ChatScreen
-        mode={mode}
-        onSelectMode={handleSelectMode}
-        onLaunch={handleActivate}
-        transportStatus={transportStatus}
-      />
+      <div className="app app-enter">
+        <header className="app-header">
+          <div className="app-title">
+            <span className="app-title-main">
+              <span className="brand-dot" />
+              Tripwire Cascade
+            </span>
+            <span className="app-title-sub">Security Operations Console</span>
+          </div>
+          <SandboxCounter active={false} />
+        </header>
+        <main className="prerun">
+          <section className="panel panel-network">
+            <NetworkDiagram prerun />
+          </section>
+          <CommandBar
+            mode={mode}
+            onSelectMode={handleSelectMode}
+            onLaunch={handleActivate}
+            transportStatus={transportStatus}
+          />
+        </main>
+      </div>
     );
   }
 

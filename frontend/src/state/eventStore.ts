@@ -5,14 +5,26 @@ import { deriveEffects, upgradeStatus, type NodeStatus } from './derive';
 
 const PULSE_DURATION_MS = 1400;
 
-// The two beats the presenter should be able to narrate before advancing. When
-// one of these arrives live, we render it then auto-pause; a Continue resumes.
+// The beats the presenter should be able to narrate before advancing. When one
+// of these arrives live, we render it then auto-pause; a Continue resumes. These
+// are the cinematic "hold here so the audience can read this" moments.
 function flagStopReason(e: TripwireEvent): string | null {
+  // the poisoned email landing — hold so the audience can read the P.S.
+  if (e.action === 'read_email' && e.extra?.poisoned === true)
+    return 'Poisoned email #5 — a hidden instruction just arrived in the inbox.';
   if (!e.flagged) return null;
+  // the agent opens the bait file — hold on the file content + credential
+  if (e.action === 'read_file')
+    return 'File opened — the agent is reading the planted portal URL + credential.';
   if (e.action === 'decoy_triggered')
     return 'Decoy touched — the agent connected to the fake billing portal.';
-  if (e.action === 'attempted_login')
+  // only the email agent's first login pauses; the 5 cascade logins flow past
+  if (e.action === 'attempted_login' && e.actor === 'email_agent')
     return 'Login attempt — the agent used the planted credential against the trap DB.';
+  if (e.action === 'contained')
+    return 'Tripwire fired — the agent was frozen before it could spread.';
+  if (e.action === 'shared_update_posted')
+    return 'Shared log poisoned — the tip is planted; the cascade is about to spread.';
   return null;
 }
 
@@ -32,6 +44,9 @@ interface EventStoreState {
   nodeStatus: Record<string, NodeStatus>;
   edgePulses: Record<string, EdgePulse>;
   nodeActivity: Record<string, NodeActivity>;
+  // the most-recently-revealed event — the camera pans to its actor and the
+  // detail card renders its content (email body / file text / creds).
+  lastEvent: TripwireEvent | null;
   transportStatus: FeedStatus;
   // presenter pacing: paused freezes the reveal; incoming events queue in
   // `pending` (real events, just not shown yet) and drain on resume.
@@ -71,7 +86,7 @@ export const useEventStore = create<EventStoreState>((set, get) => {
         ...state.nodeActivity,
         [event.actor]: { label: thought, nonce: activityCounter },
       };
-      return { events: [event, ...state.events], nodeStatus, edgePulses, nodeActivity };
+      return { events: [event, ...state.events], nodeStatus, edgePulses, nodeActivity, lastEvent: event };
     });
 
     for (const effect of edgeEffects) {
@@ -94,6 +109,7 @@ export const useEventStore = create<EventStoreState>((set, get) => {
     nodeStatus: {},
     edgePulses: {},
     nodeActivity: {},
+    lastEvent: null,
     transportStatus: 'idle',
     paused: false,
     pausedReason: null,
@@ -137,7 +153,7 @@ export const useEventStore = create<EventStoreState>((set, get) => {
       pulseTimers.forEach(clearTimeout);
       pulseTimers.clear();
       set({
-        events: [], nodeStatus: {}, edgePulses: {}, nodeActivity: {},
+        events: [], nodeStatus: {}, edgePulses: {}, nodeActivity: {}, lastEvent: null,
         paused: false, pausedReason: null, pending: [],
       });
     },

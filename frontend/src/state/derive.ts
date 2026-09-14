@@ -69,7 +69,9 @@ export function deriveEffects(event: TripwireEvent): DerivedEffects {
       break;
 
     case A.accessedCredential:
-      // The agent touches a file it was never asked for — off-task begins.
+    case A.readFile:
+      // The agent opens a file it was never asked for (the planted bait) —
+      // off-task begins. A flagged read_file is the injection being followed.
       nodeEffects.push({ nodeId: emailAgent, status: 'wandering' });
       break;
 

@@ -110,3 +110,6 @@ html {
   --t-fast: 0.3s;
   --t-med: 0.5s;
 }
+
+/* slow token for camera pans */
+:root { --t-slow: 0.8s; }

@@ -1,0 +1,74 @@
+/* Readable content panel for the current beat — floats bottom-left over the
+   camera so the audience can actually read the email / file / credential the
+   agent is acting on, without fighting the zoomed node graph behind it. */
+.focus-card {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  width: min(460px, 46%);
+  max-height: 62%;
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-bg-raised) 92%, black);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  animation: focus-card-in var(--t-med, 0.5s) var(--ease-standard) both;
+  z-index: 5;
+}
+
+@keyframes focus-card-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.focus-card-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.focus-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.25;
+}
+.focus-card-body {
+  margin: 0;
+  padding: 11px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow: auto;
+}
+.focus-card-note {
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+/* tone accents on the left edge — neutral / warning / danger */
+.focus-card.focus-neutral { border-left: 3px solid var(--blue); }
+.focus-card.focus-warn {
+  border-left: 3px solid var(--amber);
+  background: color-mix(in srgb, var(--amber) 8%, var(--panel-bg-raised));
+}
+.focus-card.focus-danger {
+  border-left: 3px solid var(--red);
+  background: color-mix(in srgb, var(--red) 9%, var(--panel-bg-raised));
+}
+.focus-card.focus-danger .focus-card-title { color: var(--red); }
+.focus-card.focus-warn .focus-card-title { color: var(--amber); }
