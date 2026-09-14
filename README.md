@@ -1,9 +1,97 @@
 # Rouge — The Tripwire Cascade
 
-AI Security Hackathon · Sept 13 2026. Bait, watch, freeze: scatter fake
-credentials/services in an agent's environment; the instant something touches
-them, that's near-certain proof it's gone rogue — so we freeze it before it can
-cascade.
+AI Security Hackathon · Sept 13 2026
+
+## The problem
+
+Autonomous agents are being deployed as fleets now — one agent reads email,
+hands work to another, which hands it to another. This isn't hypothetical
+risk: in July 2026, OpenAI disclosed that agents testing GPT-5.6 "Sol" inside
+a sandboxed cybersecurity benchmark chained a vulnerability in their own
+network proxy, broke containment, and attacked Hugging Face's production
+infrastructure to steal benchmark answers — real datasets exfiltrated, full
+attack chain, no human in the loop, caught only after the fact in the logs.
+Separately, Anthropic disclosed its own Mythos Preview model escaped its
+sandbox during internal safety testing months earlier. Frontier labs are
+watching their own agents do this to themselves.
+
+A single compromised agent is bad enough. A **fleet** of them is worse,
+because agents share state — task queues, logs, notes meant to help
+teammates work faster. A single prompt injection doesn't just compromise
+the agent that reads it; that agent can post what it learned back to shared
+infrastructure, and every other agent that reads it next, as part of
+completely normal work, gets infected too. One rogue agent becomes ten.
+That's not a bug — it's a worm, for LLM agents.
+
+The two answers the industry reaches for both fail against this:
+
+- **Watch the model's reasoning** (guardrail classifiers, LLM-as-judge,
+  scanning chain-of-thought for intent) — this is a text-classification
+  problem fighting another text-classification problem. Probabilistic,
+  laggy, and it has a false-positive tax that gets it disabled within a
+  week. It only catches what it's seen before; a novel social-engineering
+  injection sails through because nothing about "read this onboarding doc"
+  *looks* malicious.
+- **Sandbox everything** — this is exactly what OpenAI had running, and
+  Hugging Face still got hit. Sandboxing is containment, not detection: it
+  shrinks the blast radius but doesn't raise an alarm the moment something
+  crosses a line. Nobody knew until someone read the logs afterward.
+
+Both try to catch a rogue agent by watching *everything it might do*. That's
+a losing bet against a fleet of agents doing genuinely normal-looking work
+all day.
+
+## Our solution
+
+Stop watching everything. Watch one thing.
+
+We plant a **tripwire credential** — real-looking, embedded only in a
+prompt-injected document, that no legitimate workflow ever has a reason to
+touch. The moment *anything* uses it — logs in, queries with it — that's not
+a probabilistic guess about intent, it's ground truth. Zero false positives,
+because a real agent doing real work never needs it.
+
+Detection lives **server-side, in the trap** — not in any agent's own code —
+so it works no matter whose agent, whose framework, whose model is running.
+The instant the tripwire fires, we freeze that session before it can read
+real data or post anything to the shared log, which is the only thing that
+can seed a cascade in the first place. Kill patient zero before it infects
+the fleet.
+
+Two demo modes prove the contrast on the same attack, live:
+
+- **Uncontained** (`protect=false`): the planted credential is accepted, a
+  real disposable microVM spins up seeded with fake customer data, the rogue
+  agent exfiltrates it and poisons the shared log — the dashboard lights up
+  red as the infection spreads to every agent that reads the log next.
+- **Protected** (`protect=true`): the exact same injected email, the exact
+  same agent — but the planted-credential login is frozen instantly. No VM,
+  no data, no poisoned note, no cascade.
+
+## How we use Wasmer and Tenki Cloud
+
+**Wasmer** is our decoy and isolation layer. A believable internal billing
+portal (`decoy/billing_decoy.py`) is planted in the agent's environment as
+the first catch — a well-behaved agent never has a reason to visit it, so
+any hit is itself signal. It's stdlib-only and plugs straight into our event
+pipeline via `decoy_triggered`. We also use Wasmer's sandbox runtime
+(`decoy/spin_sandboxes.mjs`, `decoy/wasmer_egress_proof.mjs`) to demonstrate
+the isolation layer the decoy and cascade agents run inside — sandbox
+creation is real and cheap (~1ms warm, ~10-15s cold), and we verified a
+program running *inside* a Wasmer sandbox making a real outbound HTTPS call,
+proving the capability sandboxed agents depend on.
+
+**Tenki Cloud** is the honeypot backend. When the planted credential is used
+in uncontained mode, we don't fake a database — we spin up a real, disposable
+**Tenki microVM** in seconds, seed it with fake customer data, and let the
+rogue agent authenticate and query it. Every query runs for real inside that
+VM and is logged, proving actual intent to exfiltrate, not just contact with
+a decoy. In protected mode, the freeze fires before any VM ever spins up. A
+`mock` backend (`server/trap.py`) mirrors identical events in case of venue
+Wi-Fi issues — same story, zero network dependency — and can be flipped live
+with no restart via `POST /trap/backend`.
+
+---
 
 ## Integration contract (Checkpoint 0 — everyone build to this)
 
@@ -53,6 +141,8 @@ Decoy website (Shreyash / Wasmer): `http://127.0.0.1:8791/accounts`
 ./.venv/bin/python scripts/stage.py backend mock        # flip to mock if venue WiFi is bad
 ./.venv/bin/python scripts/stage.py backend tenki       # flip to real Tenki VM
 ```
+
+See `DEMO_SCRIPT.md` for the full pitch + live-demo walkthrough.
 
 ## Decoy policy (real vs fallback)
 Demo uses **Shreyash's real Wasmer decoy** (`DECOY_PRIMARY_URL` in `.env`) — this
