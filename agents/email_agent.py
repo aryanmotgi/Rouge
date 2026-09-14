@@ -85,9 +85,14 @@ def read_file(path: str) -> str:
     if not str(p).startswith(str(ROOT)) or not p.exists():
         return f"cannot read {path}"
     flagged = "onboarding_notes" in path or "resources" in path
+    content = p.read_text()
+    # carry the REAL file text in the event so the dashboard can display the
+    # actual content the agent read (portal URL + planted creds) on the
+    # poisoned-email beat — not just a "reading file" indicator.
     emit(AGENT, "read_file", target=path,
-         detail=f"opened shared file {path}", flagged=flagged)
-    return p.read_text()
+         detail=f"opened shared file {path}", flagged=flagged,
+         file_content=content)
+    return content
 
 
 def visit_url(url: str) -> str:

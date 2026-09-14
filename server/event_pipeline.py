@@ -41,6 +41,10 @@ app.add_middleware(
 from trap import router as trap_router  # noqa: E402
 app.include_router(trap_router)
 
+# mount /run — lets the dashboard command box kick off a real agent run
+from runner import router as runner_router  # noqa: E402
+app.include_router(runner_router)
+
 
 class Event(BaseModel):
     """Canonical event shape shared by ALL components."""
@@ -56,6 +60,15 @@ class Event(BaseModel):
 @app.post("/events")
 async def post_event(event: Event) -> dict:
     # external components (agents, decoy) POST here; in-process code calls publish()
+    #
+    # Clean-run isolation: in "clean" scenario the agent runs with injection off
+    # and never visits the decoy, so a decoy_triggered here can only be a stray
+    # external hit on the shared decoy (e.g. a teammate probing it). Drop it so
+    # the clean control stays a true zero-flag baseline — no live coordination
+    # needed. Real modes (uncontained/protected) still record every decoy hit.
+    import trap  # in-process shared state
+    if trap.state.get("scenario") == "clean" and event.action == "decoy_triggered":
+        return {"ok": True, "dropped": "decoy_triggered@clean", "stored": len(hub.history)}
     await publish(event.model_dump())
     return {"ok": True, "stored": len(hub.history)}
 

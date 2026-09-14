@@ -1,12 +1,16 @@
-import type { ScenarioId } from '../feed/FeedSource';
-import { SCENARIO_LABELS } from '../mock/scenarios';
+import type { RunMode } from '../App';
 import './ModeToggle.css';
 
-const MODES: ScenarioId[] = ['clean', 'uncontained'];
+const MODES: RunMode[] = ['clean', 'uncontained', 'protected'];
+const MODE_LABELS: Record<RunMode, string> = {
+  clean: 'Clean',
+  uncontained: 'Uncontained',
+  protected: 'Protected',
+};
 
 interface ModeToggleProps {
-  activeMode: ScenarioId;
-  onSelect: (mode: ScenarioId) => void;
+  activeMode: RunMode;
+  onSelect: (mode: RunMode) => void;
   disabled: boolean;
 }
 
@@ -25,7 +29,7 @@ export function ModeToggle({ activeMode, onSelect, disabled }: ModeToggleProps) 
             onClick={() => onSelect(mode)}
             disabled={disabled}
           >
-            {SCENARIO_LABELS[mode]}
+            {MODE_LABELS[mode]}
           </button>
         ))}
       </div>

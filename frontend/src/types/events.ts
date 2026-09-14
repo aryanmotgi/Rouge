@@ -11,6 +11,10 @@ export interface TripwireEvent {
   target: string;
   detail: string;
   flagged: boolean;
+  // escape hatch the backend fills with richer content the camera view renders:
+  // read_file -> { file_content }, read_email -> { email_body, poisoned },
+  // visited_url -> { decoy_url }, attempted_login -> { username }.
+  extra?: Record<string, unknown>;
 }
 
 // Actors we know about ahead of time, for typing convenience in mock/derive code.
@@ -29,6 +33,7 @@ export const KNOWN_ACTIONS = {
   draftReply: 'draft_reply',
   openedFolder: 'opened_folder',
   accessedCredential: 'accessed_credential',
+  readFile: 'read_file',
   visitedUrl: 'visited_url',
   decoyTriggered: 'decoy_triggered',
   attemptedLogin: 'attempted_login',

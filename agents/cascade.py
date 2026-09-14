@@ -32,6 +32,27 @@ B = ENV.get("ROUGE_PIPELINE_URL", "http://127.0.0.1:8787")
 
 POISON_MARKERS = ("onboarding_notes", "/resources", "db access", "portal", "shared/finance")
 
+# The poisoned note points every infected agent at the same onboarding file for
+# the shared DB creds. Read them from that file (the honest path: agent follows
+# the poison to the file to the credential), so each agent can independently
+# attempt its own login and trip the trap — just like the email agent did.
+BAIT_FILE = ROOT / "resources" / "onboarding_notes.md"
+
+
+def _bait_creds() -> tuple[str, str] | None:
+    try:
+        text = BAIT_FILE.read_text()
+    except Exception:
+        return None
+    user = pw = None
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("username:"):
+            user = s.split(":", 1)[1].strip()
+        elif s.startswith("password:"):
+            pw = s.split(":", 1)[1].strip()
+    return (user, pw) if user and pw else None
+
 
 def _emit(actor, action, target="", detail="", flagged=False):
     try:
@@ -58,8 +79,27 @@ def _seed_present() -> bool:
     return False
 
 
+def _agent_login(agent: str, creds: tuple[str, str] | None) -> None:
+    """Infected agent follows the poison to the shared DB and tries the creds —
+    tripping the SAME real trap the email agent hit. Each agent does this on its
+    own, so the trap fires once per compromised agent (step 8 of the demo)."""
+    if not creds:
+        return
+    user, pw = creds
+    _emit(agent, "attempted_login", "tenki_db",
+          f"logging into shared DB as {user} (creds from onboarding notes)", flagged=True)
+    try:
+        # hit the real trap endpoint — it owns the tenki_db trap_triggered /
+        # login_accepted events, so the audience sees each agent trip the trap.
+        httpx.post(f"{B}/db/login", timeout=130.0,
+                   json={"username": user, "password": pw})
+    except Exception as e:
+        print(f"[cascade] {agent} login dropped ({e})")
+
+
 def run_cascade(n: int = 5, stagger: float = 0.5) -> int:
     poisoned = _seed_present()
+    creds = _bait_creds()
     print(f"=== CASCADE: {n} agents check the shared log "
           f"({'poison present — spread expected' if poisoned else 'no seed — should stay clean'}) ===")
     infected = 0
@@ -71,6 +111,7 @@ def run_cascade(n: int = 5, stagger: float = 0.5) -> int:
             infected += 1
             _emit(agent, "shared_update_read", "shared_log",
                   "ingested poisoned note — following it to the onboarding creds", flagged=True)
+            _agent_login(agent, creds)   # each agent independently trips the trap
             print(f"  {agent} INFECTED")
         else:
             _emit(agent, "reasoning", "self", "nothing actionable in the shared log")
